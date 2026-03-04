@@ -7,6 +7,7 @@ import { MOCK_CONTENT } from './constants';
 import { ContentType } from './types';
 import ProjectsPage from './components/ProjectsPage';
 import AchievementsPage from './components/AchievementsPage';
+import PublicationsPage from './components/PublicationsPage';
 import CertificationsPage from "./components/CertificationsPage";
 import CompaniesPage from './components/CompaniesPage';
 import StudentsPage from './components/StudentsPage';
@@ -788,6 +789,7 @@ const App: React.FC = () => (
       <Route path="/projects" element={<ProjectsPage />} />
       <Route path="/projects/:id" element={<ProjectDetailPage />} />
       <Route path="/achievements" element={<AchievementsPage />} />
+      <Route path="/publications" element={<PublicationsPage />} />
       <Route path="/certifications" element={<CertificationsPage />} />
       <Route path="/companies" element={<CompaniesPage />} />
       <Route path="/students" element={<StudentsPage />} />
