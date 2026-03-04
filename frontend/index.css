@@ -32,3 +32,139 @@
 .animate-scan {
   animation: scan 2s ease-in-out infinite;
 }
+
+/* ══════════════════════════════════════════════════════════
+   LIGHT THEME OVERRIDES
+   All Tailwind dark-palette classes are remapped to
+   an off-white palette when html.light is set.
+   ══════════════════════════════════════════════════════════ */
+
+html.light {
+  color-scheme: light;
+}
+
+html.light body {
+  background-color: #f5f4f0;
+  color: #1a1a2e;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────── */
+html.light ::-webkit-scrollbar-track  { background: #e8e7e2; }
+html.light ::-webkit-scrollbar-thumb  { background: #b0aaa5; border-radius: 4px; }
+html.light ::-webkit-scrollbar-thumb:hover { background: #8a8580; }
+
+/* ── Background colours ────────────────────────────────── */
+html.light .bg-gray-950  { background-color: #f5f4f0 !important; }
+html.light .bg-gray-900  { background-color: #eeede8 !important; }
+html.light .bg-gray-800  { background-color: #e3e2dd !important; }
+html.light .bg-gray-700  { background-color: #d4d3ce !important; }
+html.light .bg-gray-600  { background-color: #bfbebc !important; }
+html.light .bg-gray-500  { background-color: #a8a7a5 !important; }
+
+/* opacity-modified backgrounds */
+html.light .bg-gray-950\/95 { background-color: rgba(245,244,240,0.97) !important; }
+html.light .bg-gray-900\/80 { background-color: rgba(238,237,232,0.88) !important; }
+html.light .bg-gray-900\/70 { background-color: rgba(238,237,232,0.78) !important; }
+html.light .bg-gray-900\/60 { background-color: rgba(238,237,232,0.70) !important; }
+html.light .bg-gray-900\/50 { background-color: rgba(238,237,232,0.60) !important; }
+html.light .bg-gray-900\/40 { background-color: rgba(238,237,232,0.55) !important; }
+html.light .bg-gray-900\/30 { background-color: rgba(238,237,232,0.45) !important; }
+html.light .bg-gray-800\/80 { background-color: rgba(227,226,221,0.85) !important; }
+html.light .bg-gray-800\/60 { background-color: rgba(227,226,221,0.70) !important; }
+html.light .bg-gray-800\/50 { background-color: rgba(227,226,221,0.60) !important; }
+html.light .bg-gray-800\/30 { background-color: rgba(227,226,221,0.45) !important; }
+html.light .bg-gray-700\/50 { background-color: rgba(212,211,206,0.60) !important; }
+html.light .bg-gray-700\/30 { background-color: rgba(212,211,206,0.40) !important; }
+
+/* ── Hover background colours ─────────────────────────── */
+html.light .hover\:bg-gray-950:hover { background-color: #ebebea !important; }
+html.light .hover\:bg-gray-900:hover { background-color: #e5e4df !important; }
+html.light .hover\:bg-gray-800:hover { background-color: #dddcd7 !important; }
+html.light .hover\:bg-gray-700:hover { background-color: #ceccca !important; }
+html.light .hover\:bg-gray-800\/50:hover { background-color: rgba(221,220,215,0.65) !important; }
+
+/* ── Text colours ─────────────────────────────────────── */
+html.light .text-gray-100  { color: #1a1a2e !important; }
+html.light .text-gray-200  { color: #252538 !important; }
+html.light .text-gray-300  { color: #36364a !important; }
+html.light .text-gray-400  { color: #52526a !important; }
+html.light .text-gray-500  { color: #72728a !important; }
+html.light .text-gray-600  { color: #8a8a9c !important; }
+html.light .text-gray-700  { color: #9d9db0 !important; }
+html.light .text-white     { color: #0d0d1a !important; }
+
+/* Keep cyan/emerald/yellow/red accent text as-is — only alter hover-white */
+html.light .hover\:text-white:hover  { color: #0d0d1a !important; }
+html.light .hover\:text-gray-200:hover { color: #252538 !important; }
+
+/* ── Border colours ───────────────────────────────────── */
+html.light .border-gray-800 { border-color: #d0cfca !important; }
+html.light .border-gray-700 { border-color: #bfbebc !important; }
+html.light .border-gray-600 { border-color: #acacaa !important; }
+
+/* ── Gradient overrides ───────────────────────────────── */
+html.light .from-gray-950  { --tw-gradient-from: #f5f4f0 !important; }
+html.light .from-gray-900  { --tw-gradient-from: #eeede8 !important; }
+html.light .from-gray-800  { --tw-gradient-from: #e3e2dd !important; }
+html.light .to-gray-950    { --tw-gradient-to:   #f5f4f0 !important; }
+html.light .to-gray-900    { --tw-gradient-to:   #eeede8 !important; }
+html.light .to-gray-800    { --tw-gradient-to:   #e3e2dd !important; }
+html.light .via-gray-900   { --tw-gradient-via:  #eeede8 !important; }
+
+/* ── Specific structural overrides ───────────────────── */
+
+/* Sticky header glassmorphism */
+html.light header.sticky { background-color: rgba(240,239,234,0.90) !important; border-color: #d0cfca !important; }
+
+/* Mobile fullscreen overlay */
+html.light .fixed.inset-0.bg-gray-950\/95 { background-color: rgba(245,244,240,0.97) !important; }
+
+/* Dropdown menus */
+html.light .absolute .bg-gray-900 { background-color: #eeede8 !important; }
+
+/* Input & textarea */
+html.light input,
+html.light textarea,
+html.light select {
+  background-color: #e8e7e2 !important;
+  color: #1a1a2e !important;
+  border-color: #c8c7c2 !important;
+}
+html.light input::placeholder,
+html.light textarea::placeholder { color: #8a8a9c !important; }
+html.light input:focus,
+html.light textarea:focus,
+html.light select:focus {
+  background-color: #e2e1dc !important;
+  border-color: #06b6d4 !important;
+}
+
+/* Cards & modals */
+html.light .shadow-xl   { box-shadow: 0 10px 25px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.06) !important; }
+html.light .shadow-2xl  { box-shadow: 0 20px 50px rgba(0,0,0,0.12), 0 8px 16px rgba(0,0,0,0.07) !important; }
+
+/* Footer */
+html.light footer { background-color: #eeede8 !important; border-color: #d0cfca !important; }
+
+/* Prose / MD editor used in articles */
+html.light .wmde-markdown,
+html.light [class*="wmde-markdown"] {
+  background-color: #f0efea !important;
+  color: #1a1a2e !important;
+}
+html.light .w-md-editor { background-color: #e8e7e2 !important; color: #1a1a2e !important; border-color: #c8c7c2 !important; }
+html.light .w-md-editor-text-pre,
+html.light .w-md-editor-text-input,
+html.light .w-md-editor-text { color: #1a1a2e !important; }
+
+/* Dividers */
+html.light hr { border-color: #d0cfca !important; }
+
+/* Theme toggle icon colours */
+html.light .text-gray-400.hover\:text-cyan-400 { color: #52526a; }
+
+/* Transition all themed elements smoothly */
+html.light *,
+html.dark * {
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}

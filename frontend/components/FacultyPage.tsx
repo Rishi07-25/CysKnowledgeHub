@@ -3,6 +3,7 @@ import {
     Search, Linkedin, ExternalLink, Mail, BookOpen,
     ChevronDown, ChevronUp, GraduationCap, FlaskConical, X
 } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface FacultyMember {
@@ -134,24 +135,37 @@ const ALL_DESIGNATIONS = [
 ];
 
 // ─── Designation badge style ──────────────────────────────────────────────────
-const DESIG_BADGE: Record<string, string> = {
-    'Professor': 'text-amber-300 bg-amber-900/30 border-amber-700/40',
-    'Associate Professor': 'text-cyan-300 bg-cyan-900/30 border-cyan-700/40',
-    'Assistant Professor (Senior Grade)': 'text-indigo-300 bg-indigo-900/30 border-indigo-700/40',
-    'Assistant Professor': 'text-gray-300 bg-gray-800/60 border-gray-700/40',
+const DESIG_BADGE_DARK: Record<string, string> = {
+    'Professor':                         'text-amber-300  bg-amber-900/30  border-amber-700/40',
+    'Associate Professor':               'text-cyan-300   bg-cyan-900/30   border-cyan-700/40',
+    'Assistant Professor (Senior Grade)':'text-indigo-300 bg-indigo-900/30 border-indigo-700/40',
+    'Assistant Professor':               'text-gray-300   bg-gray-800/60   border-gray-700/40',
+};
+const DESIG_BADGE_LIGHT: Record<string, string> = {
+    'Professor':                         'text-amber-700  bg-amber-50   border-amber-400',
+    'Associate Professor':               'text-cyan-700   bg-cyan-50    border-cyan-400',
+    'Assistant Professor (Senior Grade)':'text-indigo-700 bg-indigo-50  border-indigo-400',
+    'Assistant Professor':               'text-gray-600   bg-gray-100   border-gray-400',
 };
 
-const designBadgeClass = (designation: string) => {
-    for (const key of Object.keys(DESIG_BADGE)) {
-        if (designation.startsWith(key)) return DESIG_BADGE[key];
+const designBadgeClass = (designation: string, isLight: boolean) => {
+    const map = isLight ? DESIG_BADGE_LIGHT : DESIG_BADGE_DARK;
+    for (const key of Object.keys(map)) {
+        if (designation.startsWith(key)) return map[key];
     }
-    return 'text-gray-300 bg-gray-800/60 border-gray-700/40';
+    return isLight ? 'text-gray-600 bg-gray-100 border-gray-400' : 'text-gray-300 bg-gray-800/60 border-gray-700/40';
 };
 
 // ─── Faculty Card ─────────────────────────────────────────────────────────────
 const FacultyCard: React.FC<{ faculty: FacultyMember; onOpen: () => void }> = ({ faculty, onOpen }) => {
     const hue = nameToHue(faculty.name);
-    const badgeCls = designBadgeClass(faculty.designation);
+    const { theme } = useTheme();
+    const isLight = theme === 'light';
+    const badgeCls = designBadgeClass(faculty.designation, isLight);
+
+    const avatarStyle = isLight
+        ? { background: `radial-gradient(circle at 40% 40%, hsl(${hue},40%,82%), hsl(${hue},25%,90%))`, color: `hsl(${hue},60%,30%)` }
+        : { background: `radial-gradient(circle at 40% 40%, hsl(${hue},45%,18%), hsl(${hue},30%,10%))`, color: `hsl(${hue},75%,72%)` };
 
     return (
         <div
@@ -177,10 +191,7 @@ const FacultyCard: React.FC<{ faculty: FacultyMember; onOpen: () => void }> = ({
                     ) : (
                         <div
                             className="w-20 h-20 rounded-2xl border-2 border-gray-700 group-hover:border-cyan-500/50 flex items-center justify-center text-2xl font-bold select-none transition-colors"
-                            style={{
-                                background: `radial-gradient(circle at 40% 40%, hsl(${hue},45%,18%), hsl(${hue},30%,10%))`,
-                                color: `hsl(${hue},75%,72%)`,
-                            }}
+                            style={avatarStyle}
                         >
                             {getInitials(faculty.name)}
                         </div>
@@ -195,7 +206,7 @@ const FacultyCard: React.FC<{ faculty: FacultyMember; onOpen: () => void }> = ({
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 flex-wrap">
-                        <h3 className="text-lg font-bold text-white group-hover:text-cyan-50 transition-colors leading-tight">
+                        <h3 className={`text-lg font-bold group-hover:text-cyan-600 transition-colors leading-tight ${isLight ? 'text-gray-900' : 'text-white group-hover:text-cyan-50'}`}>
                             {faculty.name}
                         </h3>
                         <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border flex-shrink-0 ${badgeCls}`}>
@@ -209,7 +220,7 @@ const FacultyCard: React.FC<{ faculty: FacultyMember; onOpen: () => void }> = ({
                     </div>
 
                     {/* Bio excerpt */}
-                    <p className="mt-3 text-sm text-gray-400 leading-relaxed line-clamp-2">
+                    <p className={`mt-3 text-sm leading-relaxed line-clamp-2 ${isLight ? 'text-gray-600' : 'text-gray-400'}`}>
                         {faculty.bio}
                     </p>
 
@@ -219,13 +230,13 @@ const FacultyCard: React.FC<{ faculty: FacultyMember; onOpen: () => void }> = ({
                             {faculty.researchInterests.slice(0, 3).map((tag, i) => (
                                 <span
                                     key={i}
-                                    className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-800 border border-gray-700/50 text-gray-400"
+                                    className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${isLight ? 'bg-cyan-50 border border-cyan-300 text-cyan-700' : 'bg-gray-800 border border-gray-700/50 text-gray-400'}`}
                                 >
                                     {tag}
                                 </span>
                             ))}
                             {faculty.researchInterests.length > 3 && (
-                                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-800 border border-gray-700/50 text-gray-500">
+                                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${isLight ? 'bg-gray-100 border border-gray-300 text-gray-500' : 'bg-gray-800 border border-gray-700/50 text-gray-500'}`}>
                                     +{faculty.researchInterests.length - 3} more
                                 </span>
                             )}
@@ -272,8 +283,18 @@ const FacultyCard: React.FC<{ faculty: FacultyMember; onOpen: () => void }> = ({
 const FacultyModal: React.FC<{ faculty: FacultyMember; onClose: () => void }> = ({ faculty, onClose }) => {
     const hue = nameToHue(faculty.name);
     const [showAllSubjects, setShowAllSubjects] = useState(false);
-    const badgeCls = designBadgeClass(faculty.designation);
+    const { theme } = useTheme();
+    const isLight = theme === 'light';
+    const badgeCls = designBadgeClass(faculty.designation, isLight);
     const visibleSubjects = showAllSubjects ? faculty.subjects : faculty.subjects.slice(0, 4);
+
+    const bannerStyle = isLight
+        ? { background: `linear-gradient(135deg, hsl(${hue},35%,88%) 0%, hsl(${hue + 40},25%,92%) 100%)` }
+        : { background: `linear-gradient(135deg, hsl(${hue},40%,14%) 0%, hsl(${hue + 40},30%,10%) 100%)` };
+
+    const avatarStyle = isLight
+        ? { background: `radial-gradient(circle at 40% 40%, hsl(${hue},40%,82%), hsl(${hue},25%,90%))`, color: `hsl(${hue},60%,30%)` }
+        : { background: `radial-gradient(circle at 40% 40%, hsl(${hue},45%,18%), hsl(${hue},30%,10%))`, color: `hsl(${hue},75%,72%)` };
 
     return (
         <div
@@ -287,9 +308,7 @@ const FacultyModal: React.FC<{ faculty: FacultyMember; onClose: () => void }> = 
                 {/* Top gradient banner */}
                 <div
                     className="absolute top-0 left-0 right-0 h-28 pointer-events-none"
-                    style={{
-                        background: `linear-gradient(135deg, hsl(${hue},40%,14%) 0%, hsl(${hue + 40},30%,10%) 100%)`,
-                    }}
+                    style={bannerStyle}
                 />
 
                 {/* Close button — pinned outside the scroll area */}
@@ -315,10 +334,7 @@ const FacultyModal: React.FC<{ faculty: FacultyMember; onClose: () => void }> = 
                             ) : (
                                 <div
                                     className="w-20 h-20 rounded-2xl border-2 border-gray-700 shadow-xl flex items-center justify-center text-2xl font-bold select-none"
-                                    style={{
-                                        background: `radial-gradient(circle at 40% 40%, hsl(${hue},45%,18%), hsl(${hue},30%,10%))`,
-                                        color: `hsl(${hue},75%,72%)`,
-                                    }}
+                                    style={avatarStyle}
                                 >
                                     {getInitials(faculty.name)}
                                 </div>
@@ -326,7 +342,7 @@ const FacultyModal: React.FC<{ faculty: FacultyMember; onClose: () => void }> = 
                         </div>
 
                         <div className="flex-1 min-w-0 pt-1">
-                            <h2 className="text-xl font-bold text-white leading-tight break-words">{faculty.name}</h2>
+                            <h2 className={`text-xl font-bold leading-tight break-words ${isLight ? 'text-gray-900' : 'text-white'}`}>{faculty.name}</h2>
                             <span className={`inline-block mt-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${badgeCls}`}>
                                 {faculty.designation.replace(' (Senior Grade)', '')}
                             </span>
@@ -345,8 +361,8 @@ const FacultyModal: React.FC<{ faculty: FacultyMember; onClose: () => void }> = 
 
                     {/* Bio */}
                     <div className="mb-5">
-                        <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">About</h4>
-                        <p className="text-sm text-gray-300 leading-relaxed">{faculty.bio}</p>
+                        <h4 className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${isLight ? 'text-gray-500' : 'text-gray-500'}`}>About</h4>
+                        <p className={`text-sm leading-relaxed ${isLight ? 'text-gray-700' : 'text-gray-300'}`}>{faculty.bio}</p>
                     </div>
 
                     {/* Research interests */}
@@ -360,7 +376,7 @@ const FacultyModal: React.FC<{ faculty: FacultyMember; onClose: () => void }> = 
                                 {faculty.researchInterests.map((tag, i) => (
                                     <span
                                         key={i}
-                                        className="text-xs font-medium px-3 py-1 rounded-full border border-cyan-800/50 bg-cyan-900/20 text-cyan-300"
+                                        className={`text-xs font-medium px-3 py-1 rounded-full border ${isLight ? 'border-cyan-300 bg-cyan-50 text-cyan-700' : 'border-cyan-800/50 bg-cyan-900/20 text-cyan-300'}`}
                                     >
                                         {tag}
                                     </span>
@@ -379,7 +395,7 @@ const FacultyModal: React.FC<{ faculty: FacultyMember; onClose: () => void }> = 
                             {visibleSubjects.map((subj, i) => (
                                 <span
                                     key={i}
-                                    className="text-xs font-medium px-3 py-1 rounded-full border border-gray-700 bg-gray-800 text-gray-300"
+                                    className={`text-xs font-medium px-3 py-1 rounded-full border ${isLight ? 'border-gray-300 bg-gray-100 text-gray-600' : 'border-gray-700 bg-gray-800 text-gray-300'}`}
                                 >
                                     {subj}
                                 </span>
@@ -404,7 +420,7 @@ const FacultyModal: React.FC<{ faculty: FacultyMember; onClose: () => void }> = 
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={e => e.stopPropagation()}
-                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-900/30 border border-blue-800/40 text-blue-300 hover:text-blue-200 hover:bg-blue-900/50 text-sm font-medium transition-all"
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all ${isLight ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100' : 'bg-blue-900/30 border-blue-800/40 text-blue-300 hover:text-blue-200 hover:bg-blue-900/50'}`}
                             >
                                 <Linkedin className="w-4 h-4" />
                                 LinkedIn
@@ -416,7 +432,7 @@ const FacultyModal: React.FC<{ faculty: FacultyMember; onClose: () => void }> = 
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={e => e.stopPropagation()}
-                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-900/25 border border-cyan-800/40 text-cyan-300 hover:text-cyan-200 hover:bg-cyan-900/45 text-sm font-medium transition-all"
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all ${isLight ? 'bg-cyan-50 border-cyan-300 text-cyan-700 hover:bg-cyan-100' : 'bg-cyan-900/25 border-cyan-800/40 text-cyan-300 hover:text-cyan-200 hover:bg-cyan-900/45'}`}
                             >
                                 <GraduationCap className="w-4 h-4" />
                                 Google Scholar
@@ -425,7 +441,7 @@ const FacultyModal: React.FC<{ faculty: FacultyMember; onClose: () => void }> = 
                         <a
                             href={`mailto:${faculty.email}`}
                             onClick={e => e.stopPropagation()}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-800 border border-gray-700 text-gray-300 hover:text-white hover:bg-gray-700 text-sm font-medium transition-all"
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all ${isLight ? 'bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200' : 'bg-gray-800 border-gray-700 text-gray-300 hover:text-white hover:bg-gray-700'}`}
                         >
                             <Mail className="w-4 h-4" />
                             Email
@@ -443,6 +459,8 @@ const FacultyPage: React.FC = () => {
     const [query, setQuery] = useState('');
     const [desgFilter, setDesgFilter] = useState('All');
     const [selectedFaculty, setSelectedFaculty] = useState<FacultyMember | null>(null);
+    const { theme } = useTheme();
+    const isLight = theme === 'light';
 
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();
@@ -472,7 +490,7 @@ const FacultyPage: React.FC = () => {
     return (
         <div className="space-y-10">
             {/* ── Page Hero ──────────────────────────────────────────────────── */}
-            <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950/40 via-gray-900/60 to-cyan-950/30 border border-gray-800 p-8 md:p-10">
+            <section className={`relative overflow-hidden rounded-3xl border p-8 md:p-10 ${isLight ? 'bg-gradient-to-br from-indigo-50 via-white to-cyan-50 border-indigo-200' : 'bg-gradient-to-br from-indigo-950/40 via-gray-900/60 to-cyan-950/30 border-gray-800'}`}>
                 {/* Dot-grid background */}
                 <div
                     className="absolute inset-0 opacity-[0.07] pointer-events-none"
@@ -486,14 +504,14 @@ const FacultyPage: React.FC = () => {
 
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-6">
                     <div className="flex-1">
-                        <div className="inline-flex items-center gap-2 text-[10px] font-bold text-indigo-400/80 uppercase tracking-widest mb-3 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full">
+                        <div className={`inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest mb-3 px-3 py-1 rounded-full border ${isLight ? 'text-indigo-700 bg-indigo-100 border-indigo-300' : 'text-indigo-400/80 bg-indigo-500/10 border-indigo-500/20'}`}>
                             <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
                             Dept. of Cyber Security · Chennai
                         </div>
-                        <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-3">
+                        <h1 className={`text-4xl md:text-5xl font-bold leading-tight mb-3 ${isLight ? 'text-gray-900' : 'text-white'}`}>
                             Meet the <span className="text-cyan-400">Faculty</span>
                         </h1>
-                        <p className="text-gray-400 text-sm md:text-base max-w-2xl">
+                        <p className={`text-sm md:text-base max-w-2xl ${isLight ? 'text-gray-600' : 'text-gray-400'}`}>
                             The researchers and educators of the Cyber Security department at Amrita School of Engineering, Chennai.
                         </p>
                     </div>
@@ -505,9 +523,9 @@ const FacultyPage: React.FC = () => {
                             { label: 'Assoc. Prof.', value: FACULTY.filter(f => f.designation.startsWith('Associate')).length },
                             { label: 'Asst. Prof.', value: FACULTY.filter(f => f.designation.startsWith('Assistant')).length },
                         ].map(stat => (
-                            <div key={stat.label} className="bg-gray-900/70 border border-gray-700/50 rounded-2xl px-5 py-4 text-center min-w-[80px]">
-                                <div className="text-2xl font-bold text-white">{stat.value}</div>
-                                <div className="text-[10px] text-gray-500 uppercase tracking-wider mt-0.5">{stat.label}</div>
+                            <div key={stat.label} className={`border rounded-2xl px-5 py-4 text-center min-w-[80px] ${isLight ? 'bg-white border-indigo-200 shadow-sm' : 'bg-gray-900/70 border-gray-700/50'}`}>
+                                <div className={`text-2xl font-bold ${isLight ? 'text-gray-900' : 'text-white'}`}>{stat.value}</div>
+                                <div className={`text-[10px] uppercase tracking-wider mt-0.5 ${isLight ? 'text-gray-500' : 'text-gray-500'}`}>{stat.label}</div>
                             </div>
                         ))}
                     </div>
@@ -536,8 +554,12 @@ const FacultyPage: React.FC = () => {
                             onClick={() => setDesgFilter(d)}
                             className={`text-xs font-semibold px-3 py-2 rounded-xl border transition-all whitespace-nowrap ${
                                 desgFilter === d
-                                ? 'bg-cyan-500/15 border-cyan-500/50 text-cyan-400'
-                                : 'bg-gray-900 border-gray-800 text-gray-400 hover:border-gray-700 hover:text-gray-200'
+                                ? isLight
+                                    ? 'bg-cyan-100 border-cyan-400 text-cyan-700'
+                                    : 'bg-cyan-500/15 border-cyan-500/50 text-cyan-400'
+                                : isLight
+                                    ? 'bg-white border-gray-300 text-gray-500 hover:border-gray-400 hover:text-gray-700'
+                                    : 'bg-gray-900 border-gray-800 text-gray-400 hover:border-gray-700 hover:text-gray-200'
                             }`}
                         >
                             {d.replace(' (Senior Grade)', '')}
