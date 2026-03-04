@@ -153,7 +153,6 @@ export interface Publication {
   title: string;
   kind: PublicationKind;
   publicationDate: string;
-  year: number;
   venue: string;
   publisher: string;
   abstract: string;

@@ -19,9 +19,22 @@ const PublicationDetailModal: React.FC<PublicationDetailModalProps> = ({ publica
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [publication, onClose]);
 
+  useEffect(() => {
+    if (!publication) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [publication]);
+
   if (!publication) return null;
 
-  const formattedDate = new Date(publication.publicationDate).toLocaleDateString(undefined, {
+  const [yearPart, monthPart, dayPart] = publication.publicationDate.split('-').map(Number);
+  const localDate = new Date(yearPart, monthPart - 1, dayPart);
+
+  const formattedDate = localDate.toLocaleDateString(undefined, {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -63,7 +76,7 @@ const PublicationDetailModal: React.FC<PublicationDetailModalProps> = ({ publica
               <p className="text-gray-100 font-medium">{publication.publisher}</p>
             </div>
             <div className="bg-gray-800/40 border border-gray-700 rounded-xl p-3 md:col-span-2">
-              <p className="text-gray-500 text-xs uppercase mb-1 inline-flex items-center gap-1"><FileText className="w-3.5 h-3.5" /> Conference / Journal</p>
+              <p className="text-gray-500 text-xs uppercase mb-1 inline-flex items-center gap-1"><FileText className="w-3.5 h-3.5" /> Venue</p>
               <p className="text-gray-100 font-medium">{publication.venue}</p>
             </div>
             <div className="bg-gray-800/40 border border-gray-700 rounded-xl p-3 md:col-span-2">

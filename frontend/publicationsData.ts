@@ -6,7 +6,6 @@ export const PUBLICATIONS: Publication[] = [
     title: 'Adaptive Ransomware Family Classification using Temporal Graph Signals',
     kind: 'Paper',
     publicationDate: '2025-11-18',
-    year: 2025,
     venue: 'IEEE International Conference on Communications and Network Security (CNS)',
     publisher: 'IEEE',
     abstract:
@@ -20,7 +19,6 @@ export const PUBLICATIONS: Publication[] = [
     title: 'A Lightweight Zero-Trust Policy Engine for Campus Edge Networks',
     kind: 'Paper',
     publicationDate: '2025-09-06',
-    year: 2025,
     venue: 'Springer Journal of Network and Systems Management',
     publisher: 'Springer',
     abstract:
@@ -34,7 +32,6 @@ export const PUBLICATIONS: Publication[] = [
     title: 'Secure Federated Learning for Intrusion Detection in Multi-Tenant Labs',
     kind: 'Paper',
     publicationDate: '2025-07-22',
-    year: 2025,
     venue: 'Elsevier Computers & Security',
     publisher: 'Elsevier',
     abstract:
@@ -45,10 +42,9 @@ export const PUBLICATIONS: Publication[] = [
   },
   {
     id: 'pub-2025-04',
-    title: 'Patent: Context-Aware Phishing Defense System with Browser-Side Risk Scoring',
+    title: 'Context-Aware Phishing Defense System with Browser-Side Risk Scoring',
     kind: 'Patent',
     publicationDate: '2025-04-14',
-    year: 2025,
     venue: 'Indian Patent Office',
     publisher: 'IP India',
     abstract:
@@ -62,7 +58,6 @@ export const PUBLICATIONS: Publication[] = [
     title: 'Benchmarking SOC Alert Triage using Retrieval-Augmented Incident Context',
     kind: 'Paper',
     publicationDate: '2025-02-10',
-    year: 2025,
     venue: 'ACM Asia Conference on Computer and Communications Security (ASIACCS)',
     publisher: 'ACM',
     abstract:
@@ -76,7 +71,6 @@ export const PUBLICATIONS: Publication[] = [
     title: 'Cross-Cloud Misconfiguration Detection via Policy Graph Canonicalization',
     kind: 'Paper',
     publicationDate: '2024-10-28',
-    year: 2024,
     venue: 'IEEE Cloud Summit',
     publisher: 'IEEE',
     abstract:
@@ -90,7 +84,6 @@ export const PUBLICATIONS: Publication[] = [
     title: 'Real-Time Malware Family Attribution from API Call Sequences',
     kind: 'Paper',
     publicationDate: '2024-08-16',
-    year: 2024,
     venue: 'Springer Lecture Notes in Computer Science (LNCS)',
     publisher: 'Springer',
     abstract:
@@ -101,10 +94,9 @@ export const PUBLICATIONS: Publication[] = [
   },
   {
     id: 'pub-2024-03',
-    title: 'Patent: Differential-Privacy Assisted Student Threat-Intel Sharing Framework',
+    title: 'Differential-Privacy Assisted Student Threat-Intel Sharing Framework',
     kind: 'Patent',
     publicationDate: '2024-06-09',
-    year: 2024,
     venue: 'Indian Patent Office',
     publisher: 'IP India',
     abstract:
@@ -118,7 +110,6 @@ export const PUBLICATIONS: Publication[] = [
     title: 'Explainable Botnet Detection in IoT Traffic using Hybrid Attention Models',
     kind: 'Paper',
     publicationDate: '2024-03-02',
-    year: 2024,
     venue: 'Elsevier Internet of Things Journal',
     publisher: 'Elsevier',
     abstract:
@@ -132,7 +123,6 @@ export const PUBLICATIONS: Publication[] = [
     title: 'Toward Practical Memory Forensics Pipelines for Undergraduate SOC Labs',
     kind: 'Paper',
     publicationDate: '2023-11-13',
-    year: 2023,
     venue: 'IEEE Region 10 Conference (TENCON)',
     publisher: 'IEEE',
     abstract:
@@ -146,7 +136,6 @@ export const PUBLICATIONS: Publication[] = [
     title: 'A Comparative Study of Open-Source SIEM Pipelines for Academic Environments',
     kind: 'Paper',
     publicationDate: '2023-07-07',
-    year: 2023,
     venue: 'Springer SN Computer Science',
     publisher: 'Springer',
     abstract:
@@ -157,10 +146,9 @@ export const PUBLICATIONS: Publication[] = [
   },
   {
     id: 'pub-2023-03',
-    title: 'Poster: Human-in-the-Loop Labeling for Security Alert Deduplication',
+    title: 'Human-in-the-Loop Labeling for Security Alert Deduplication',
     kind: 'Poster',
     publicationDate: '2023-03-18',
-    year: 2023,
     venue: 'ACM Student Research Competition',
     publisher: 'ACM',
     abstract:

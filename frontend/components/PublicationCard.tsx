@@ -8,6 +8,8 @@ interface PublicationCardProps {
 }
 
 const PublicationCard: React.FC<PublicationCardProps> = ({ publication, onClick }) => {
+  const publicationYear = publication.publicationDate.slice(0, 4);
+
   return (
     <button
       type="button"
@@ -21,7 +23,7 @@ const PublicationCard: React.FC<PublicationCardProps> = ({ publication, onClick 
         </span>
         <span className="inline-flex items-center gap-1 text-xs text-gray-400">
           <CalendarDays className="w-3.5 h-3.5" />
-          {publication.year}
+          {publicationYear}
         </span>
       </div>
 

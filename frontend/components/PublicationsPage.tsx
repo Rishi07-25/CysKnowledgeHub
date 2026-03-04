@@ -9,13 +9,12 @@ const PublicationsPage: React.FC = () => {
   const [selectedPublication, setSelectedPublication] = useState<Publication | null>(null);
 
   const publicationsByYear = useMemo(() => {
-    const sorted = [...PUBLICATIONS].sort(
-      (a, b) => new Date(b.publicationDate).getTime() - new Date(a.publicationDate).getTime()
-    );
+    const sorted = [...PUBLICATIONS].sort((a, b) => b.publicationDate.localeCompare(a.publicationDate));
 
     return sorted.reduce<Record<number, Publication[]>>((accumulator, publication) => {
-      if (!accumulator[publication.year]) accumulator[publication.year] = [];
-      accumulator[publication.year].push(publication);
+      const year = Number(publication.publicationDate.slice(0, 4));
+      if (!accumulator[year]) accumulator[year] = [];
+      accumulator[year].push(publication);
       return accumulator;
     }, {});
   }, []);
