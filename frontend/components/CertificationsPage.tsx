@@ -40,7 +40,7 @@ const Category: React.FC<CategoryProps> = ({ title, certifications, onSelectCert
               {/* Inner glow ring */}
               <div className="absolute inset-0 bg-white/30 rounded-full blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-              <div className="w-[75%] h-[75%] bg-gray-950 rounded-full flex items-center justify-center p-1.5 shadow-inner relative z-10 border border-gray-800">
+              <div className="w-[75%] h-[75%] bg-[#12121e] rounded-full flex items-center justify-center p-1.5 shadow-inner relative z-10 border border-[#2a2a40]">
                 {cert.badgeUrl ? (
                   <img
                     src={cert.badgeUrl}

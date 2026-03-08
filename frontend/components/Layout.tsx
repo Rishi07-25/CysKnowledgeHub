@@ -1,8 +1,9 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Shield, BookOpen, Map, Award, Terminal, Briefcase, Menu, X, Github, UserCircle, LogOut, Cpu, Building2, ChevronDown, FileBadge, MessageSquare, Users, PenLine, ShieldCheck } from 'lucide-react';
+import { Shield, BookOpen, Map, Award, Terminal, Briefcase, Menu, X, Github, UserCircle, LogOut, Cpu, Building2, ChevronDown, FileBadge, MessageSquare, Users, PenLine, ShieldCheck, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import AuthModal from './AuthModal';
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,6 +13,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [openNav, setOpenNav] = useState<string | null>(null);
+  const { theme, toggle: toggleTheme } = useTheme();
   const userMenuRef = useRef<HTMLDivElement>(null);
   const { user, signOut, role } = useAuth();
   const navigate = useNavigate();
@@ -22,16 +25,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
-  // Close user-menu on outside click
+  // Close user-menu and nav dropdowns on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setShowUserMenu(false);
       }
+      const target = e.target as Element;
+      if (!target.closest('[data-nav-dropdown]')) {
+        setOpenNav(null);
+      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, []);
+  }, [])
 
   // Keep a concise top-level nav and expose category subsections
   const navItems = [
@@ -92,17 +99,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   }`}>
                     {item.label} <ChevronDown className="w-3.5 h-3.5 opacity-70 group-hover:rotate-180 transition-transform" />
                   </button>
-                  <div className="absolute top-full left-0 mt-2 w-48 bg-gray-900 border border-gray-800 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden translate-y-2 group-hover:translate-y-0">
-                    {item.subItems.map(sub => (
-                      <button
-                        key={sub.id}
-                        onClick={() => navigate(sub.path)}
-                        className={`w-full flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-left transition-colors hover:bg-gray-800 hover:text-cyan-400 ${isActive(sub.path) ? 'text-cyan-500 bg-gray-800/50' : 'text-gray-400'}`}
-                      >
-                        <sub.icon className="w-4 h-4" />
-                        {sub.label}
-                      </button>
-                    ))}
+                  <div className="absolute top-full left-0 pt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                    <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-xl overflow-hidden">
+                      {item.subItems.map(sub => (
+                        <button
+                          key={sub.id}
+                          onClick={() => { navigate(sub.path); setOpenNav(null); }}
+                          className={`w-full flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-left transition-colors hover:bg-gray-800 hover:text-cyan-400 ${isActive(sub.path) ? 'text-cyan-500 bg-gray-800/50' : 'text-gray-400'}`}
+                        >
+                          <sub.icon className="w-4 h-4" />
+                          {sub.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -181,6 +190,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 Sign In
               </button>
             )}
+
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="p-2 rounded-xl text-gray-400 hover:text-cyan-400 hover:bg-gray-800/50 transition-colors"
+            >
+              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
 
             {/* Mobile hamburger */}
             <button
