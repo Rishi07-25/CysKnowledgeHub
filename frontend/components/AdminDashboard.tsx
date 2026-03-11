@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Users, Hash, FileText, ShieldCheck, Loader2, AlertCircle,
   Plus, Trash2, Edit2, Check, X, ChevronUp, ChevronDown,
-  RefreshCw, Eye, BookOpen, UserCog,
+  RefreshCw, Eye, BookOpen, UserCog, Search, Layers,
 } from 'lucide-react';
 import {
   adminGetUsers, adminSetUserRole,
@@ -11,6 +11,8 @@ import {
   DbUser, Topic, Article,
 } from '../services/ctfApi';
 import NovelRenderer from './NovelRenderer';
+import { useToast } from '../contexts/ToastContext';
+import ConfirmModal from './ConfirmModal';
 
 // ─── Shared Helpers ───────────────────────────────────────────────────────────
 
@@ -37,13 +39,11 @@ const Badge: React.FC<{ label: string; color: string }> = ({ label, color }) => 
 // ─── Panel: Users ─────────────────────────────────────────────────────────────
 
 const UsersPanel: React.FC = () => {
+  const toast = useToast();
   const [users, setUsers] = useState<DbUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
-
-  const flash = (msg: string) => { setSuccessMsg(msg); setTimeout(() => setSuccessMsg(null), 3000); };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -60,8 +60,8 @@ const UsersPanel: React.FC = () => {
     try {
       await adminSetUserRole(uid, role);
       await load();
-      flash(`Role updated to "${role}".`);
-    } catch (err: any) { setError(err.message); }
+      toast.success(`Role updated to "${role}".`);
+    } catch (err: any) { toast.error(err.message); }
     finally { setUpdatingId(null); }
   };
 
@@ -78,9 +78,6 @@ const UsersPanel: React.FC = () => {
           <RefreshCw className="w-4 h-4" />
         </button>
       </div>
-
-      {error && <ErrorBanner msg={error} onDismiss={() => setError(null)} />}
-      {successMsg && <SuccessBanner msg={successMsg} />}
 
       {loading ? <LoadingSpinner /> : (
         <div className="rounded-2xl border border-gray-800 overflow-hidden overflow-x-auto">
@@ -133,17 +130,29 @@ const UsersPanel: React.FC = () => {
 // ─── Panel: Topics ────────────────────────────────────────────────────────────
 
 const TopicsPanel: React.FC = () => {
+  const toast = useToast();
+  // Topic type filter (persisted to localStorage)
+  const [activeTopicType, setActiveTopicType] = useState<CMSType>(() => {
+    try {
+      const saved = localStorage.getItem('adminTopicType');
+      return (saved === 'blog' || saved === 'ctf') ? saved : 'blog';
+    } catch { return 'blog'; }
+  });
+
   const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
   const [form, setForm] = useState({ title: '', description: '', type: 'ctf' as 'ctf' | 'blog' | 'experiment' });
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; title: string; articleCount: number } | null>(null);
 
-  const flash = (msg: string) => { setSuccessMsg(msg); setTimeout(() => setSuccessMsg(null), 3000); };
+  // Persist topic type to localStorage
+  useEffect(() => {
+    try { localStorage.setItem('adminTopicType', activeTopicType); } catch {}
+  }, [activeTopicType]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -155,7 +164,12 @@ const TopicsPanel: React.FC = () => {
 
   useEffect(() => { load(); }, [load]);
 
-  const openCreate = () => { setForm({ title: '', description: '', type: 'ctf' }); setEditingTopic(null); setShowForm(true); };
+  const openCreate = () => {
+    const cmsConfig = CMS_TYPES.find(c => c.id === activeTopicType);
+    setForm({ title: '', description: '', type: cmsConfig?.apiValue as any || 'ctf' });
+    setEditingTopic(null);
+    setShowForm(true);
+  };
   const openEdit = (t: Topic) => { setForm({ title: t.title, description: t.description ?? '', type: t.type ?? 'ctf' }); setEditingTopic(t); setShowForm(true); };
 
   const handleSave = async () => {
@@ -164,33 +178,73 @@ const TopicsPanel: React.FC = () => {
     try {
       if (editingTopic) {
         await adminUpdateTopic(editingTopic._id, { title: form.title, description: form.description, type: form.type });
-        flash('Topic updated.');
+        toast.success('Topic updated.');
       } else {
         await adminCreateTopic({ title: form.title, description: form.description, type: form.type });
-        flash('Topic created.');
+        toast.success('Topic created.');
       }
       setShowForm(false);
       await load();
-    } catch (err: any) { setError(err.message); }
+    } catch (err: any) { toast.error(err.message); }
     finally { setSaving(false); }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this topic and all its articles?')) return;
-    setDeletingId(id);
-    try { await adminDeleteTopic(id); await load(); flash('Topic deleted.'); }
-    catch (err: any) { setError(err.message); }
-    finally { setDeletingId(null); }
+  const handleDelete = async (id: string, topicTitle: string) => {
+    try {
+      const { articles } = await adminGetArticles({ topicId: id });
+      const articleCount = articles.length;
+      setDeleteConfirm({ id, title: topicTitle, articleCount });
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    setDeletingId(deleteConfirm.id);
+    try {
+      await adminDeleteTopic(deleteConfirm.id);
+      await load();
+      toast.success('Topic deleted.');
+      setDeleteConfirm(null);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const moveOrder = async (topic: Topic, direction: 'up' | 'down') => {
     const delta = direction === 'up' ? -1.5 : 1.5;
     try { await adminUpdateTopic(topic._id, { order: topic.order + delta }); await load(); }
-    catch (err: any) { setError(err.message); }
+    catch (err: any) { toast.error(err.message); }
   };
+
+  // Filter topics by active type
+  const filteredTopics = topics.filter((t) => {
+    const cmsConfig = CMS_TYPES.find(c => c.id === activeTopicType);
+    return t.type === cmsConfig?.apiValue;
+  });
 
   return (
     <div className="space-y-4">
+      <ConfirmModal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={confirmDelete}
+        title="Delete Topic?"
+        message={
+          deleteConfirm
+            ? deleteConfirm.articleCount > 0
+              ? `Are you sure you want to delete "${deleteConfirm.title}"?\n\nThis will delete ${deleteConfirm.articleCount} article${deleteConfirm.articleCount === 1 ? '' : 's'}.`
+              : `Are you sure you want to delete "${deleteConfirm.title}"?`
+            : ''
+        }
+        confirmText="Delete"
+        variant="danger"
+        isLoading={!!deletingId}
+      />
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold flex items-center gap-2">
@@ -199,15 +253,30 @@ const TopicsPanel: React.FC = () => {
           <p className="text-sm text-gray-500 mt-0.5">Organise content categories and their display order</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={load} className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-800 border border-gray-800 rounded-xl transition-all"><RefreshCw className="w-4 h-4" /></button>
+          <button onClick={load} className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-800 border border-gray-800 rounded-xl transition-all" title="Refresh"><RefreshCw className="w-4 h-4" /></button>
           <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 rounded-xl text-sm font-semibold transition-colors shadow-lg shadow-cyan-900/30">
             <Plus className="w-4 h-4" /> New Topic
           </button>
         </div>
       </div>
 
-      {error && <ErrorBanner msg={error} onDismiss={() => setError(null)} />}
-      {successMsg && <SuccessBanner msg={successMsg} />}
+      {/* Topic Type Switcher */}
+      <div className="flex items-center gap-2 pb-3 border-b border-gray-800">
+        <span className="text-xs font-bold uppercase tracking-widest text-gray-600">Topic Type:</span>
+        {CMS_TYPES.map((cms) => (
+          <button
+            key={cms.id}
+            onClick={() => setActiveTopicType(cms.id)}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              activeTopicType === cms.id
+                ? 'bg-cyan-900/30 text-cyan-300 border border-cyan-500/40'
+                : 'bg-gray-800/60 text-gray-400 border border-gray-700 hover:text-white hover:border-gray-600'
+            }`}
+          >
+            {cms.label}
+          </button>
+        ))}
+      </div>
 
       {/* Create/Edit form */}
       {showForm && (
@@ -232,11 +301,15 @@ const TopicsPanel: React.FC = () => {
               value={form.type}
               onChange={(e) => setForm({ ...form, type: e.target.value as 'ctf' | 'blog' | 'experiment' })}
               className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+              disabled={!!editingTopic}
             >
               <option value="ctf">CTF Writeup</option>
               <option value="blog">Blog</option>
               <option value="experiment">Experiment</option>
             </select>
+            {editingTopic && (
+              <p className="text-xs text-gray-600 mt-1">Type cannot be changed after creation</p>
+            )}
           </div>
           <div className="flex gap-2">
             <button
@@ -252,8 +325,19 @@ const TopicsPanel: React.FC = () => {
         </div>
       )}
 
-      {loading ? <LoadingSpinner /> : topics.length === 0 ? (
-        <p className="text-center text-gray-600 py-12">No topics yet. Create your first one!</p>
+      {loading ? <LoadingSpinner /> : filteredTopics.length === 0 ? (
+        <div className="text-center py-16">
+          <Hash className="w-12 h-12 text-gray-700 mx-auto mb-3 opacity-50" />
+          <p className="text-gray-600 mb-4">
+            No {CMS_TYPES.find(c => c.id === activeTopicType)?.label} topics yet.
+          </p>
+          <button
+            onClick={openCreate}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/30 text-cyan-400 rounded-xl text-sm font-semibold transition-all"
+          >
+            <Plus className="w-4 h-4" /> Create your first topic
+          </button>
+        </div>
       ) : (
         <div className="rounded-2xl border border-gray-800 overflow-hidden overflow-x-auto">
           <div className="min-w-[640px]">
@@ -265,7 +349,7 @@ const TopicsPanel: React.FC = () => {
             <span>Description</span>
             <span className="text-right">Actions</span>
           </div>
-          {topics.map((t, idx) => (
+          {filteredTopics.map((t, idx) => (
             <div
               key={t._id}
               className={`grid grid-cols-[44px_1fr_120px_2fr_100px] gap-4 items-center px-5 py-3.5 ${
@@ -273,21 +357,19 @@ const TopicsPanel: React.FC = () => {
               } hover:bg-gray-800/40 transition-colors`}
             >
               <div className="flex flex-col gap-0.5">
-                <button disabled={idx === 0} onClick={() => moveOrder(t, 'up')} className="text-gray-600 hover:text-white disabled:opacity-20 transition-colors"><ChevronUp className="w-3.5 h-3.5" /></button>
-                <button disabled={idx === topics.length - 1} onClick={() => moveOrder(t, 'down')} className="text-gray-600 hover:text-white disabled:opacity-20 transition-colors"><ChevronDown className="w-3.5 h-3.5" /></button>
+                <button disabled={idx === 0} onClick={() => moveOrder(t, 'up')} className="text-gray-600 hover:text-white disabled:opacity-20 transition-colors" title="Move up"><ChevronUp className="w-3.5 h-3.5" /></button>
+                <button disabled={idx === filteredTopics.length - 1} onClick={() => moveOrder(t, 'down')} className="text-gray-600 hover:text-white disabled:opacity-20 transition-colors" title="Move down"><ChevronDown className="w-3.5 h-3.5" /></button>
               </div>
               <p className="font-medium text-white">{t.title}</p>
               <div className="flex items-center">
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                  t.type === 'blog' ? 'text-emerald-400 bg-emerald-900/30 border-emerald-700/40' :
-                  t.type === 'experiment' ? 'text-purple-400 bg-purple-900/30 border-purple-700/40' :
-                  'text-cyan-400 bg-cyan-900/30 border-cyan-700/40'
-                }`}>{t.type ?? 'ctf'}</span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${TYPE_COLORS[t.type ?? 'ctf']}`}>
+                  {t.type ?? 'ctf'}
+                </span>
               </div>
               <p className="text-xs text-gray-500 truncate min-w-0">{t.description || '—'}</p>
               <div className="flex items-center gap-1 justify-end">
-                <button onClick={() => openEdit(t)} className="p-2 text-gray-400 hover:text-cyan-400 hover:bg-gray-800 rounded-lg transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
-                <button onClick={() => handleDelete(t._id)} disabled={deletingId === t._id} className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50">
+                <button onClick={() => openEdit(t)} className="p-2 text-gray-400 hover:text-cyan-400 hover:bg-gray-800 rounded-lg transition-colors" title="Edit"><Edit2 className="w-3.5 h-3.5" /></button>
+                <button onClick={() => handleDelete(t._id, t.title)} disabled={deletingId === t._id} className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50" title="Delete">
                   {deletingId === t._id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                 </button>
               </div>
@@ -340,47 +422,107 @@ function inRange(dateStr: string, range: string): boolean {
   return d >= now - days * 24 * 60 * 60 * 1000;
 }
 
-const ArticlesReviewPanel: React.FC = () => {
+// ─── CMS Type Configuration ──────────────────────────────────────────────────
+
+type CMSType = 'blog' | 'ctf';
+
+const CMS_TYPES: { id: CMSType; label: string; apiValue: string }[] = [
+  { id: 'blog', label: 'Blog', apiValue: 'blog' },
+  { id: 'ctf', label: 'CTF Writeups', apiValue: 'ctf' },
+];
+
+const TYPE_COLORS: Record<string, string> = {
+  blog: 'text-emerald-400 bg-emerald-900/30 border-emerald-700/40',
+  ctf: 'text-cyan-400 bg-cyan-900/30 border-cyan-700/40',
+  experiment: 'text-purple-400 bg-purple-900/30 border-purple-700/40',
+};
+
+// ─── Panel: Content (Multi-CMS) ───────────────────────────────────────────────
+
+const ContentPanel: React.FC = () => {
+  const toast = useToast();
+  // CMS type state (persisted to localStorage)
+  const [activeCMS, setActiveCMS] = useState<CMSType>(() => {
+    try {
+      const saved = localStorage.getItem('adminContentType');
+      return (saved === 'blog' || saved === 'ctf') ? saved : 'blog';
+    } catch { return 'blog'; }
+  });
+
   const [articles, setArticles] = useState<Article[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState('pending');
   const [topicFilter, setTopicFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
   const [timeFilter, setTimeFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [previewArticle, setPreviewArticle] = useState<Article | null>(null);
   const [actionId, setActionId] = useState<string | null>(null);
   const [rejectForm, setRejectForm] = useState<{ id: string; reason: string } | null>(null);
   const [changeCatForm, setChangeCatForm] = useState<{ id: string; topicType: string; newTopicId: string } | null>(null);
   const [changingCat, setChangingCat] = useState(false);
+  const [pendingCounts, setPendingCounts] = useState<Record<CMSType, number>>({ blog: 0, ctf: 0 });
+  const [unpublishConfirm, setUnpublishConfirm] = useState<string | null>(null);
 
-  const flash = (msg: string) => { setSuccessMsg(msg); setTimeout(() => setSuccessMsg(null), 3000); };
+  // Persist CMS type to localStorage
+  useEffect(() => {
+    try { localStorage.setItem('adminContentType', activeCMS); } catch {}
+  }, [activeCMS]);
 
   // Load topics once for the filter dropdown
   useEffect(() => {
     adminGetTopics().then(({ topics }) => setTopics(topics)).catch(() => {});
   }, []);
 
+  // Load pending counts for all CMS types
+  const loadPendingCounts = useCallback(async () => {
+    try {
+      const counts: Record<CMSType, number> = { blog: 0, ctf: 0 };
+      for (const cms of CMS_TYPES) {
+        const { articles } = await adminGetArticles({ status: 'pending', topicType: cms.apiValue });
+        counts[cms.id] = articles.length;
+      }
+      setPendingCounts(counts);
+    } catch {}
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
+      const cmsConfig = CMS_TYPES.find(c => c.id === activeCMS);
       const { articles } = await adminGetArticles({
         status: statusFilter || undefined,
         topicId: topicFilter || undefined,
-        topicType: typeFilter || undefined,
+        topicType: cmsConfig?.apiValue || undefined,
       });
       setArticles(articles);
-    } catch (err: any) { setError(err.message); }
+      await loadPendingCounts();
+    } catch (err: any) { toast.error(err.message); }
     finally { setLoading(false); }
-  }, [statusFilter, topicFilter, typeFilter]);
+  }, [statusFilter, topicFilter, activeCMS, loadPendingCounts]);
 
-  // Client-side time filter applied to fetched articles
-  const visibleArticles = timeFilter
-    ? articles.filter((a) => inRange(a.updatedAt, timeFilter))
-    : articles;
+  // Client-side filters: time + search
+  const visibleArticles = articles
+    .filter((a) => !timeFilter || inRange(a.updatedAt, timeFilter))
+    .filter((a) => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      const topicTitle = typeof a.topicId === 'object' ? (a.topicId as any).title?.toLowerCase() : '';
+      return (
+        a.title.toLowerCase().includes(q) ||
+        a.authorName.toLowerCase().includes(q) ||
+        topicTitle.includes(q)
+      );
+    });
+
+  // Calculate metrics for current CMS type
+  const metrics = {
+    total: articles.length,
+    pending: articles.filter(a => a.status === 'pending').length,
+    published: articles.filter(a => a.status === 'published').length,
+  };
 
   useEffect(() => { load(); }, [load]);
 
@@ -392,16 +534,20 @@ const ArticlesReviewPanel: React.FC = () => {
         status === 'approved' ? 'Article approved and published.' :
         status === 'pending'  ? 'Article unpublished and set to pending.' :
         `Article ${status}.`;
-      flash(msg);
+      if (status === 'pending') {
+        toast.warning(msg);
+      } else {
+        toast.success(msg);
+      }
       await load();
-    } catch (err: any) { setError(err.message); }
+    } catch (err: any) { toast.error(err.message); }
     finally { setActionId(null); setRejectForm(null); }
   };
 
   const moveOrder = async (article: Article, dir: 'up' | 'down') => {
     const delta = dir === 'up' ? -1.5 : 1.5;
     try { await adminSetArticleOrder(article._id, article.order + delta); await load(); }
-    catch (err: any) { setError(err.message); }
+    catch (err: any) { toast.error(err.message); }
   };
 
   const handleChangeCat = async () => {
@@ -409,86 +555,170 @@ const ArticlesReviewPanel: React.FC = () => {
     setChangingCat(true);
     try {
       await adminUpdateArticleTopic(changeCatForm.id, changeCatForm.newTopicId);
-      flash('Category updated.');
+      toast.success('Category updated.');
       setChangeCatForm(null);
       await load();
-    } catch (err: any) { setError(err.message); }
+    } catch (err: any) { toast.error(err.message); }
     finally { setChangingCat(false); }
   };
 
   return (
     <div className="space-y-4">
       {previewArticle && <ArticlePreviewModal article={previewArticle} onClose={() => setPreviewArticle(null)} />}
+      
+      <ConfirmModal
+        isOpen={!!unpublishConfirm}
+        onClose={() => setUnpublishConfirm(null)}
+        onConfirm={() => {
+          if (unpublishConfirm) {
+            handleStatus(unpublishConfirm, 'pending');
+            setUnpublishConfirm(null);
+          }
+        }}
+        title="Unpublish Article?"
+        message="Are you sure you want to unpublish this article? It will be moved back to pending status and removed from public view."
+        confirmText="Unpublish"
+        variant="warning"
+        isLoading={!!actionId}
+      />
 
-      {/* Toolbar row */}
-      <div className="flex items-center justify-between gap-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-cyan-500" /> Article Review
+            <Layers className="w-5 h-5 text-cyan-500" /> Content Management
             {!loading && (
               <span className="text-sm font-normal text-gray-500">
-                — {visibleArticles.length}{timeFilter || topicFilter ? ` of ${articles.length}` : ''} articles
+                — {visibleArticles.length}{timeFilter || topicFilter || searchQuery ? ` of ${articles.length}` : ''} articles
               </span>
             )}
           </h2>
-          <p className="text-sm text-gray-500 mt-0.5">Review, approve, and publish submitted content</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
-          >
-            <option value="">All statuses</option>
-            <option value="pending">Pending</option>
-            <option value="published">Published</option>
-            <option value="rejected">Rejected</option>
-            <option value="draft">Draft</option>
-          </select>
-          <select
-            value={typeFilter}
-            onChange={(e) => { setTypeFilter(e.target.value); setTopicFilter(''); }}
-            className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
-          >
-            <option value="">All types</option>
-            <option value="blog">Blog</option>
-            <option value="ctf">CTF</option>
-            <option value="experiment">Experiment</option>
-          </select>
-          <select
-            value={topicFilter}
-            onChange={(e) => setTopicFilter(e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
-          >
-            <option value="">All topics</option>
-            {topics
-              .filter((t) => !typeFilter || t.type === typeFilter)
-              .map((t) => (
-              <option key={t._id} value={t._id}>{t.title}</option>
-            ))}
-          </select>
-          <select
-            value={timeFilter}
-            onChange={(e) => setTimeFilter(e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
-          >
-            {TIME_RANGES.map(({ label, value }) => (
-              <option key={value} value={value}>{label}</option>
-            ))}
-          </select>
-          <button onClick={load} className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-800 border border-gray-800 rounded-xl transition-all">
-            <RefreshCw className="w-4 h-4" />
-          </button>
+          <p className="text-sm text-gray-500 mt-0.5">Review, approve, and publish content across all CMS types</p>
         </div>
       </div>
 
-      {error && <ErrorBanner msg={error} onDismiss={() => setError(null)} />}
-      {successMsg && <SuccessBanner msg={successMsg} />}
+      {/* CMS Type Switcher */}
+      <div className="flex items-center gap-2 pb-3 border-b border-gray-800">
+        <span className="text-xs font-bold uppercase tracking-widest text-gray-600">Content Type:</span>
+        {CMS_TYPES.map((cms) => (
+          <button
+            key={cms.id}
+            onClick={() => { setActiveCMS(cms.id); setTopicFilter(''); setSearchQuery(''); }}
+            className={`relative px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              activeCMS === cms.id
+                ? 'bg-cyan-900/30 text-cyan-300 border border-cyan-500/40'
+                : 'bg-gray-800/60 text-gray-400 border border-gray-700 hover:text-white hover:border-gray-600'
+            }`}
+          >
+            {cms.label}
+            {pendingCounts[cms.id] > 0 && (
+              <span className={`ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                activeCMS === cms.id
+                  ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                  : 'bg-yellow-900/30 text-yellow-500/70'
+              }`}>
+                {pendingCounts[cms.id]}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Metrics Row */}
+      {!loading && articles.length > 0 && (
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-gray-900/60 border border-gray-800 rounded-xl px-4 py-3">
+            <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Total Articles</div>
+            <div className="text-2xl font-bold text-white">{metrics.total}</div>
+          </div>
+          <div className="bg-yellow-900/20 border border-yellow-700/40 rounded-xl px-4 py-3">
+            <div className="text-xs text-yellow-500/70 uppercase tracking-wider mb-1">Pending Review</div>
+            <div className="text-2xl font-bold text-yellow-400">{metrics.pending}</div>
+          </div>
+          <div className="bg-cyan-900/20 border border-cyan-700/40 rounded-xl px-4 py-3">
+            <div className="text-xs text-cyan-500/70 uppercase tracking-wider mb-1">Published</div>
+            <div className="text-2xl font-bold text-cyan-400">{metrics.published}</div>
+          </div>
+        </div>
+      )}
+
+      {/* Filters & Search Row */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Global Search */}
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search content, author, or topic..."
+            className="w-full bg-gray-800 border border-gray-700 rounded-xl pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 placeholder:text-gray-600"
+          />
+        </div>
+        {/* Status Filter */}
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+        >
+          <option value="">All statuses</option>
+          <option value="pending">Pending</option>
+          <option value="published">Published</option>
+          <option value="rejected">Rejected</option>
+          <option value="draft">Draft</option>
+        </select>
+
+        {/* Topic Filter */}
+        <select
+          value={topicFilter}
+          onChange={(e) => setTopicFilter(e.target.value)}
+          className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+        >
+          <option value="">All topics</option>
+          {topics
+            .filter((t) => {
+              const cmsConfig = CMS_TYPES.find(c => c.id === activeCMS);
+              return t.type === cmsConfig?.apiValue;
+            })
+            .map((t) => (
+            <option key={t._id} value={t._id}>{t.title}</option>
+          ))}
+        </select>
+
+        {/* Time Range Filter */}
+        <select
+          value={timeFilter}
+          onChange={(e) => setTimeFilter(e.target.value)}
+          className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+        >
+          {TIME_RANGES.map(({ label, value }) => (
+            <option key={value} value={value}>{label}</option>
+          ))}
+        </select>
+
+        {/* Refresh Button */}
+        <button onClick={load} className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-800 border border-gray-800 rounded-xl transition-all" title="Refresh">
+          <RefreshCw className="w-4 h-4" />
+        </button>
+      </div>
 
       {loading ? <LoadingSpinner /> : visibleArticles.length === 0 ? (
-        <p className="text-center text-gray-600 py-12">
-          {articles.length === 0 ? 'No articles in this state.' : 'No articles match the selected filters.'}
-        </p>
+        <div className="text-center py-16">
+          <FileText className="w-12 h-12 text-gray-700 mx-auto mb-3 opacity-50" />
+          <p className="text-gray-600">
+            {articles.length === 0
+              ? `No ${CMS_TYPES.find(c => c.id === activeCMS)?.label} articles in this state.`
+              : 'No articles match the selected filters.'}
+          </p>
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="mt-3 text-sm text-cyan-500 hover:underline"
+            >
+              Clear search
+            </button>
+          )}
+        </div>
       ) : (
         <div className="space-y-3">
           {visibleArticles.map((a, idx) => {
@@ -507,24 +737,21 @@ const ArticlesReviewPanel: React.FC = () => {
                   )}
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-1.5">
+                    <div className="flex items-center gap-3 mb-1.5 flex-wrap">
                       <h3 className="font-semibold text-white">{a.title}</h3>
                       <Badge label={a.status} color={STATUS_COLORS[a.status] ?? STATUS_COLORS.draft} />
                       {typeof a.topicId === 'object' && (a.topicId as any).type && (
                         <Badge
                           label={(a.topicId as any).type}
-                          color={
-                            (a.topicId as any).type === 'blog'
-                              ? 'text-emerald-400 bg-emerald-900/30 border-emerald-700/40'
-                              : (a.topicId as any).type === 'experiment'
-                              ? 'text-purple-400 bg-purple-900/30 border-purple-700/40'
-                              : 'text-cyan-400 bg-cyan-900/30 border-cyan-700/40'
-                          }
+                          color={TYPE_COLORS[(a.topicId as any).type] ?? TYPE_COLORS.ctf}
                         />
                       )}
                     </div>
-                    <div className="flex items-center gap-5 text-xs text-gray-500">
-                      <span>By <span className="text-gray-300 font-medium">{a.authorName}</span></span>
+                    <div className="flex items-center gap-5 text-xs text-gray-500 flex-wrap">
+                      <span className="flex items-center gap-1">
+                        <UserCog className="w-3 h-3" />
+                        <span className="text-gray-300 font-medium">{a.authorName}</span>
+                      </span>
                       <span>Topic: <span className="text-gray-400">{topicTitle}</span></span>
                       <span>{new Date(a.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                     </div>
@@ -570,7 +797,7 @@ const ArticlesReviewPanel: React.FC = () => {
                       color="text-yellow-400 border-yellow-700/40 hover:bg-yellow-900/20"
                       icon={<X className="w-3 h-3" />}
                       loading={actionId === a._id}
-                      onClick={() => handleStatus(a._id, 'pending')}
+                      onClick={() => setUnpublishConfirm(a._id)}
                     />
                   )}
                   {(a.status === 'rejected' || a.status === 'approved') && (
@@ -627,7 +854,10 @@ const ArticlesReviewPanel: React.FC = () => {
                     >
                       <option value="">— Select new category —</option>
                       {topics
-                        .filter((t) => !changeCatForm.topicType || t.type === changeCatForm.topicType)
+                        .filter((t) => {
+                          const cmsConfig = CMS_TYPES.find(c => c.id === activeCMS);
+                          return t.type === cmsConfig?.apiValue;
+                        })
                         .map((t) => (
                           <option key={t._id} value={t._id}>{t.title}</option>
                         ))}
@@ -671,29 +901,18 @@ const LoadingSpinner: React.FC = () => (
   <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-cyan-500" /></div>
 );
 
-const ErrorBanner: React.FC<{ msg: string; onDismiss: () => void }> = ({ msg, onDismiss }) => (
-  <div className="flex items-center gap-2 text-sm text-red-400 bg-red-950/30 border border-red-700/40 rounded-xl px-4 py-3">
-    <AlertCircle className="w-4 h-4 flex-shrink-0" />{msg}
-    <button onClick={onDismiss} className="ml-auto text-gray-500 hover:text-white">✕</button>
-  </div>
-);
-
-const SuccessBanner: React.FC<{ msg: string }> = ({ msg }) => (
-  <div className="text-sm text-green-400 bg-green-950/30 border border-green-700/40 rounded-xl px-4 py-3">✓ {msg}</div>
-);
-
 // ─── Main AdminDashboard ──────────────────────────────────────────────────────
 
-type AdminTab = 'users' | 'topics' | 'review';
+type AdminTab = 'users' | 'topics' | 'content';
 
 const TABS: { id: AdminTab; label: string; icon: React.FC<any> }[] = [
-  { id: 'review', label: 'Article Review', icon: ShieldCheck },
-  { id: 'topics', label: 'Topics',         icon: Hash },
-  { id: 'users',  label: 'Users',          icon: Users },
+  { id: 'content', label: 'Content', icon: Layers },
+  { id: 'topics', label: 'Topics',   icon: Hash },
+  { id: 'users',  label: 'Users',    icon: Users },
 ];
 
 const AdminDashboard: React.FC = () => {
-  const [tab, setTab] = useState<AdminTab>('review');
+  const [tab, setTab] = useState<AdminTab>('content');
 
   return (
     <div className="space-y-6">
@@ -731,9 +950,9 @@ const AdminDashboard: React.FC = () => {
 
       {/* Panel */}
       <div>
-        {tab === 'users'  && <UsersPanel />}
-        {tab === 'topics' && <TopicsPanel />}
-        {tab === 'review' && <ArticlesReviewPanel />}
+        {tab === 'users'   && <UsersPanel />}
+        {tab === 'topics'  && <TopicsPanel />}
+        {tab === 'content' && <ContentPanel />}
       </div>
     </div>
   );

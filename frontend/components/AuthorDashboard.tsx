@@ -9,6 +9,7 @@ import {
   getMyArticles, createArticle, updateArticle, deleteArticle,
   submitArticle, getArticleForEdit, getTopics, Article, Topic,
 } from '../services/ctfApi';
+import { useToast } from '../contexts/ToastContext';
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
@@ -37,6 +38,7 @@ type View = 'list' | 'new' | 'edit';
 type TabMode = 'blog' | 'ctf';
 
 const AuthorDashboard: React.FC = () => {
+  const toast = useToast();
   const [view, setView] = useState<View>('list');
   const [activeTab, setActiveTab] = useState<TabMode>('ctf');
   const [articles, setArticles] = useState<Article[]>([]);
@@ -46,13 +48,7 @@ const AuthorDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  const flash = (msg: string) => {
-    setSuccessMsg(msg);
-    setTimeout(() => setSuccessMsg(null), 3000);
-  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -80,16 +76,16 @@ const AuthorDashboard: React.FC = () => {
       if (editingArticle) {
         const { article } = await updateArticle(editingArticle._id, data);
         setEditingArticle(article);
-        flash('Draft saved.');
+        toast.info('Draft saved.');
       } else {
         const { article } = await createArticle(data);
         setEditingArticle(article);
         setView('edit');
-        flash('Article created as draft.');
+        toast.success('Article created as draft.');
       }
       await loadData();
     } catch (err: any) {
-      setError(err.message);
+      toast.error(err.message);
     } finally {
       setIsSaving(false);
     }
@@ -112,11 +108,11 @@ const AuthorDashboard: React.FC = () => {
         setEditingArticle(created);
       }
       await submitArticle(articleId);
-      flash('Article submitted for review.');
+      toast.success('Article submitted for review.');
       await loadData();
       setView('list');
     } catch (err: any) {
-      setError(err.message);
+      toast.error(err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -140,9 +136,9 @@ const AuthorDashboard: React.FC = () => {
     try {
       await deleteArticle(id);
       await loadData();
-      flash('Article deleted.');
+      toast.success('Article deleted.');
     } catch (err: any) {
-      setError(err.message);
+      toast.error(err.message);
     } finally {
       setDeletingId(null);
     }
@@ -192,11 +188,6 @@ const AuthorDashboard: React.FC = () => {
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             {error}
             <button onClick={() => setError(null)} className="ml-auto text-gray-500 hover:text-white">✕</button>
-          </div>
-        )}
-        {successMsg && (
-          <div className="text-sm text-green-400 bg-green-950/30 border border-green-700/40 rounded-xl px-4 py-3">
-            ✓ {successMsg}
           </div>
         )}
 
@@ -317,11 +308,6 @@ const AuthorDashboard: React.FC = () => {
         <div className="flex items-center gap-2 text-sm text-red-400 bg-red-950/30 border border-red-700/40 rounded-xl px-4 py-3">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />{error}
           <button onClick={() => setError(null)} className="ml-auto text-gray-500 hover:text-white">✕</button>
-        </div>
-      )}
-      {successMsg && (
-        <div className="text-sm text-green-400 bg-green-950/30 border border-green-700/40 rounded-xl px-4 py-3">
-          ✓ {successMsg}
         </div>
       )}
 
