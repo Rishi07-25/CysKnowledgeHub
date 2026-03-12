@@ -192,7 +192,7 @@ html.light .bg-white\/10 {
 html.light header.sticky { background-color: rgba(255,255,255,0.92) !important; border-color: #dde1e8 !important; }
 
 /* Mobile fullscreen overlay */
-html.light .fixed.inset-0.bg-gray-950/95 { background-color: rgba(240,242,245,0.97) !important; }
+html.light .fixed.inset-0.bg-gray-950.bg-opacity-95 { background-color: rgba(240,242,245,0.97) !important; }
 
 /* Dropdown menus */
 html.light .absolute .bg-gray-900 { background-color: #ffffff !important; }

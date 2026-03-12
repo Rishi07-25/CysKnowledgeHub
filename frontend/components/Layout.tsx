@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Shield, BookOpen, Map, Award, Terminal, Briefcase, Menu, X, Github, UserCircle, LogOut, Cpu, Building2, ChevronDown, FileBadge, MessageSquare, Users, PenLine, ShieldCheck, Sun, Moon } from 'lucide-react';
+import { Shield, BookOpen, BookOpenText, Map, Award, Terminal, Briefcase, Menu, X, Github, UserCircle, LogOut, Cpu, Building2, ChevronDown, FileBadge, MessageSquare, Users, PenLine, ShieldCheck, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import AuthModal from './AuthModal';
@@ -82,7 +82,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-950 text-gray-100">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-gray-900/80 backdrop-blur-md border-b border-gray-800">
+      <header className="sticky top-0 z-50 bg-gray-900 bg-opacity-80 backdrop-blur-md border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
             <Shield className="w-8 h-8 text-cyan-500" />
@@ -95,7 +95,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {navItems.map((item) => (
               item.subItems ? (
                 <div key={item.id} className="relative group">
-                  <button className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-xl transition-colors hover:text-cyan-400 hover:bg-gray-800/50 ${
+                  <button className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-xl transition-colors hover:text-cyan-400 hover:bg-gray-800 hover:bg-opacity-50 ${
                     item.subItems.some(s => isActive(s.path)) ? 'text-cyan-500' : 'text-gray-400'
                   }`}>
                     {item.label} <ChevronDown className="w-3.5 h-3.5 opacity-70 group-hover:rotate-180 transition-transform" />
@@ -106,7 +106,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         <button
                           key={sub.id}
                           onClick={() => { navigate(sub.path); setOpenNav(null); }}
-                          className={`w-full flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-left transition-colors hover:bg-gray-800 hover:text-cyan-400 ${isActive(sub.path) ? 'text-cyan-500 bg-gray-800/50' : 'text-gray-400'}`}
+                          className={`w-full flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-left transition-colors hover:bg-gray-800 hover:text-cyan-400 ${isActive(sub.path) ? 'text-cyan-500 bg-gray-800 bg-opacity-50' : 'text-gray-400'}`}
                         >
                           <sub.icon className="w-4 h-4" />
                           {sub.label}
@@ -196,7 +196,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <button
               onClick={toggleTheme}
               title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              className="p-2 rounded-xl text-gray-400 hover:text-cyan-400 hover:bg-gray-800/50 transition-colors"
+              className="p-2 rounded-xl text-gray-400 hover:text-cyan-400 hover:bg-gray-800 hover:bg-opacity-50 transition-colors"
             >
               {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
@@ -214,7 +214,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-gray-950/95 pt-20 overflow-y-auto pb-10">
+        <div className="md:hidden fixed inset-0 z-40 bg-gray-950 bg-opacity-95 pt-20 overflow-y-auto pb-10">
           <nav className="flex flex-col items-center gap-8">
             {navItems.map((item) => (
               <div key={item.id} className="w-full flex flex-col items-center gap-5">
