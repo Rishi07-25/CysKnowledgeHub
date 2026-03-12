@@ -33,9 +33,9 @@ import {
 
 const roleConfig: Record<string, { icon: React.FC<{ className?: string }>, accent: string }> = {
   SOC_ANALYST: { icon: Shield, accent: 'from-cyan-900/30 to-blue-900/20' },
-  PENETRATION_TESTER: { icon: Terminal, accent: 'from-emerald-900/20 to-cyan-900/20' },
-  GRC_SPECIALIST: { icon: Award, accent: 'from-indigo-900/20 to-cyan-900/20' },
-  CLOUD_SECURITY: { icon: HardDrive, accent: 'from-sky-900/20 to-cyan-900/20' },
+  PENETRATION_TESTER: { icon: Terminal, accent: 'from-cyan-900/30 to-blue-900/20' },
+  GRC_SPECIALIST: { icon: Award, accent: 'from-cyan-900/30 to-blue-900/20' },
+  CLOUD_SECURITY: { icon: HardDrive, accent: 'from-cyan-900/30 to-blue-900/20' },
 };
 
 // Trim long topic strings to a short label (stops at — or :)

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Github, Linkedin, ExternalLink, Globe, Twitter, User, X } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 export interface StudentLink {
@@ -103,6 +104,16 @@ const LINK_CONFIG: Record<
 // ─── Student Card ─────────────────────────────────────────────────────────────
 const StudentCard: React.FC<{ student: Student; onClick: () => void }> = ({ student, onClick }) => {
     const hue = nameToHue(student.name);
+    const { theme } = useTheme();
+    const isLight = theme === 'light';
+
+    const avatarStyle = isLight
+        ? { background: `radial-gradient(circle at 40% 40%, hsl(${hue},40%,82%), hsl(${hue},25%,90%))`, color: `hsl(${hue},60%,30%)` }
+        : { background: `radial-gradient(circle at 40% 40%, hsl(${hue},50%,20%), hsl(${hue},30%,10%))`, color: `hsl(${hue},80%,75%)` };
+
+    const rollBadgeStyle = isLight
+        ? { color: `hsl(${hue},60%,30%)`, borderColor: `hsl(${hue},50%,70%)`, backgroundColor: `hsl(${hue},40%,92%)` }
+        : { color: `hsl(${hue},75%,65%)`, borderColor: `hsl(${hue},50%,30%)`, backgroundColor: `hsl(${hue},40%,12%)` };
 
     return (
         <div
@@ -136,10 +147,7 @@ const StudentCard: React.FC<{ student: Student; onClick: () => void }> = ({ stud
                     <div
                         className="w-20 h-20 rounded-full border-2 border-gray-700 group-hover:border-cyan-500/60 flex items-center justify-center
                        text-xl font-bold transition-colors duration-300 select-none"
-                        style={{
-                            background: `radial-gradient(circle at 40% 40%, hsl(${hue},50%,20%), hsl(${hue},30%,10%))`,
-                            color: `hsl(${hue},80%,75%)`,
-                        }}
+                        style={avatarStyle}
                     >
                         {getInitials(student.name)}
                     </div>
@@ -160,11 +168,7 @@ const StudentCard: React.FC<{ student: Student; onClick: () => void }> = ({ stud
             </h3>
             <span
                 className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border mb-4"
-                style={{
-                    color: `hsl(${hue},75%,65%)`,
-                    borderColor: `hsl(${hue},50%,30%)`,
-                    backgroundColor: `hsl(${hue},40%,12%)`,
-                }}
+                style={rollBadgeStyle}
             >
                 {student.rollNumber}
             </span>
@@ -256,6 +260,16 @@ const BatchBlock: React.FC<{ batch: string; students: Student[]; onSelect: (s: S
 // ─── Student Modal ────────────────────────────────────────────────────────────
 const StudentModal: React.FC<{ student: Student; onClose: () => void }> = ({ student, onClose }) => {
     const hue = nameToHue(student.name);
+    const { theme } = useTheme();
+    const isLight = theme === 'light';
+
+    const avatarStyle = isLight
+        ? { background: `radial-gradient(circle at 40% 40%, hsl(${hue},40%,82%), hsl(${hue},25%,90%))`, color: `hsl(${hue},60%,30%)` }
+        : { background: `radial-gradient(circle at 40% 40%, hsl(${hue},50%,20%), hsl(${hue},30%,10%))`, color: `hsl(${hue},80%,75%)` };
+
+    const rollBadgeStyle = isLight
+        ? { color: `hsl(${hue},60%,30%)`, borderColor: `hsl(${hue},50%,70%)`, backgroundColor: `hsl(${hue},40%,92%)` }
+        : { color: `hsl(${hue},75%,65%)`, borderColor: `hsl(${hue},50%,30%)`, backgroundColor: `hsl(${hue},40%,12%)` };
 
     return (
         <div
@@ -292,10 +306,7 @@ const StudentModal: React.FC<{ student: Student; onClose: () => void }> = ({ stu
                         ) : (
                             <div
                                 className="w-32 h-32 rounded-full border-4 border-gray-800 shadow-xl flex items-center justify-center text-4xl font-bold select-none"
-                                style={{
-                                    background: `radial-gradient(circle at 40% 40%, hsl(${hue},50%,20%), hsl(${hue},30%,10%))`,
-                                    color: `hsl(${hue},80%,75%)`,
-                                }}
+                                style={avatarStyle}
                             >
                                 {getInitials(student.name)}
                             </div>
@@ -308,11 +319,7 @@ const StudentModal: React.FC<{ student: Student; onClose: () => void }> = ({ stu
                     <div className="flex items-center justify-center gap-3 mb-6">
                         <span
                             className="text-sm font-mono font-bold px-3 py-1 rounded-full border"
-                            style={{
-                                color: `hsl(${hue},75%,65%)`,
-                                borderColor: `hsl(${hue},50%,30%)`,
-                                backgroundColor: `hsl(${hue},40%,12%)`,
-                            }}
+                            style={rollBadgeStyle}
                         >
                             {student.rollNumber}
                         </span>
@@ -405,7 +412,7 @@ const StudentsPage: React.FC = () => {
                             Department Directory
                         </div>
                         <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-3">
-                            The <span className="text-cyan-400">Constellation</span>
+                            The Constellation
                         </h1>
                         <p className="text-gray-400 text-sm md:text-base max-w-xl">
                             Every student in the department—batch by batch, section by section. The brightest minds securing tomorrow's digital world.
