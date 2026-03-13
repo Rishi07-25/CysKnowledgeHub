@@ -2,15 +2,53 @@ import { auth } from './firebase';
 
 const BASE = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:5000';
 
+// ─── Core XHR upload helper ────────────────────────────────────────────────────
+
 /**
- * Uploads an image file to the backend (POST /api/upload/image).
- * The backend stores it on disk and returns a public URL.
- * onProgress is called with 0→100 as the XHR progresses.
+ * POST /api/upload/image?type=<type>
+ *
+ * The backend uploads the file to ImageKit.io (or falls back to local disk
+ * when ImageKit credentials are not configured) and returns the public URL.
+ *
+ * @param file       - The image File / Blob to upload.
+ * @param onProgress - Optional callback receiving 0-100 upload progress.
+ * @param type       - Upload destination folder: 'ctf' or 'blog'.
+ * @returns           The public URL (ImageKit CDN URL or local server URL).
  */
 export async function uploadArticleImage(
   file: File,
   onProgress?: (pct: number) => void,
   type: 'ctf' | 'blog' = 'ctf',
+): Promise<string> {
+  return _uploadImage(file, type, onProgress);
+}
+
+/**
+ * Lightweight wrapper for inline image uploads (paste / drag-drop inside the
+ * editor). No progress callback — paste uploads are usually fast enough that
+ * a progress bar would flicker rather than help.
+ *
+ * Future ImageKit.io enhancements:
+ *   The backend already handles everything; just update IMAGEKIT_* env vars
+ *   in the backend to switch from local storage to ImageKit CDN automatically.
+ *
+ * @param file - The image File / Blob extracted from the clipboard or drop event.
+ * @param type - 'blog' or 'ctf' determines the ImageKit folder / local sub-dir.
+ * @returns     The public CDN URL to embed as the image src in the editor.
+ */
+export async function uploadInlineImage(
+  file: File,
+  type: 'ctf' | 'blog' = 'ctf',
+): Promise<string> {
+  return _uploadImage(file, type);
+}
+
+// ─── Internal ─────────────────────────────────────────────────────────────────
+
+async function _uploadImage(
+  file: File,
+  type: 'ctf' | 'blog',
+  onProgress?: (pct: number) => void,
 ): Promise<string> {
   const user = auth.currentUser;
   if (!user) throw new Error('Must be authenticated to upload images');
@@ -22,11 +60,13 @@ export async function uploadArticleImage(
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
 
-    xhr.upload.addEventListener('progress', (e) => {
-      if (e.lengthComputable) {
-        onProgress?.(Math.round((e.loaded / e.total) * 100));
-      }
-    });
+    if (onProgress) {
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          onProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      });
+    }
 
     xhr.addEventListener('load', () => {
       if (xhr.status >= 200 && xhr.status < 300) {
@@ -54,4 +94,3 @@ export async function uploadArticleImage(
     xhr.send(formData);
   });
 }
-

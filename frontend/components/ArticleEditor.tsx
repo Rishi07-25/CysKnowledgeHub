@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Image, X, Loader2, Tag, ChevronDown, Plus, Check } from 'lucide-react';
 import type { JSONContent } from '@tiptap/react';
 import NovelEditor from './NovelEditor';
-import { uploadArticleImage } from '../services/storage';
+import { uploadArticleImage, uploadInlineImage } from '../services/storage';
 import { createTopic } from '../services/ctfApi';
 import type { Topic } from '../services/ctfApi';
 import { useTheme } from '../contexts/ThemeContext';
@@ -232,6 +232,8 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({
               onChange={setNovelContent}
               disabled={!canEdit}
               className="min-h-[600px]"
+              uploadType={isBlog ? 'blog' : 'ctf'}
+              onUploadImage={(file) => uploadInlineImage(file, isBlog ? 'blog' : 'ctf')}
             />
           </div>
         </div>

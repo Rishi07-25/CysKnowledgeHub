@@ -2,37 +2,28 @@ import { Router, Response, Request } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { requireAuth, AuthRequest } from '../middleware/auth';
+import { requireAuth } from '../middleware/auth';
 import { requireRole } from '../middleware/requireRole';
+import imagekit, { isImageKitConfigured } from '../config/imagekit';
+import { toFile } from '@imagekit/nodejs';
 
 const router = Router();
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Local-disk fallback (used when ImageKit is not configured) ───────────────
 
-function uploadDir(type: string): string {
+function localUploadDir(type: string): string {
   const sub = type === 'blog' ? 'blog-images' : 'ctf-images';
   const dir = path.resolve(process.cwd(), 'uploads', sub);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   return dir;
 }
 
-// Ensure both default dirs exist at startup
-uploadDir('ctf');
-uploadDir('blog');
-
-// ─── Storage configuration ────────────────────────────────────────────────────
-
-const storage = multer.diskStorage({
-  destination: (req, _file, cb) => cb(null, uploadDir((req.query?.type as string) ?? 'ctf')),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
-    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
-  },
-});
+// ─── Multer — always use memory storage ──────────────────────────────────────
+// Buffers are sent to ImageKit; local-fallback writes them to disk manually.
 
 const upload = multer({
-  storage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB max
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
@@ -43,6 +34,14 @@ const upload = multer({
 });
 
 // ─── POST /api/upload/image ───────────────────────────────────────────────────
+//
+//  Query params:
+//    ?type=blog   → stores in /blog-images/ folder on ImageKit (or blog-images/ locally)
+//    ?type=ctf    → stores in /ctf-images/  folder on ImageKit (or ctf-images/ locally)
+//
+//  Response: { url: string, fileId?: string }
+//   • url    — public CDN URL (ImageKit) or local server URL (fallback)
+//   • fileId — ImageKit file ID (useful for future delete operations), omitted on fallback
 
 router.post(
   '/image',
@@ -61,17 +60,56 @@ router.post(
       next();
     });
   },
-  (req: Request, res: Response): void => {
+  async (req: Request, res: Response): Promise<void> => {
     const file = (req as any).file as Express.Multer.File | undefined;
     if (!file) {
       res.status(400).json({ message: 'No image file provided' });
       return;
     }
 
-    const uploadType = ((req as any).query?.type === 'blog') ? 'blog-images' : 'ctf-images';
-    const baseUrl = process.env.SERVER_URL ?? `http://localhost:${process.env.PORT ?? 5000}`;
-    const url = `${baseUrl}/uploads/${uploadType}/${file.filename}`;
-    res.json({ url });
+    const uploadType = (req.query?.type as string) === 'blog' ? 'blog' : 'ctf';
+    const folder = uploadType === 'blog' ? '/blog-images' : '/ctf-images';
+
+    // ── ImageKit path ─────────────────────────────────────────────────────────
+    if (isImageKitConfigured()) {
+      try {
+        const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
+
+        // Convert Buffer → Uploadable using the SDK helper
+        const uploadable = await toFile(file.buffer, fileName, { type: file.mimetype });
+
+        const result = await imagekit.files.upload({
+          file: uploadable,
+          fileName,
+          folder,
+          useUniqueFileName: false, // we already generate a unique name above
+        });
+
+        res.json({ url: result.url, fileId: result.fileId });
+      } catch (err: any) {
+        console.error('[ImageKit upload error]', err);
+        res.status(500).json({ message: 'ImageKit upload failed: ' + (err.message ?? String(err)) });
+      }
+      return;
+    }
+
+    // ── Local-disk fallback (dev / no credentials) ────────────────────────────
+    try {
+      const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
+      const dir = localUploadDir(uploadType);
+      fs.writeFileSync(path.join(dir, fileName), file.buffer);
+
+      const subDir = uploadType === 'blog' ? 'blog-images' : 'ctf-images';
+      const baseUrl = process.env.SERVER_URL ?? `http://localhost:${process.env.PORT ?? 5000}`;
+      const url = `${baseUrl}/uploads/${subDir}/${fileName}`;
+
+      res.json({ url });
+    } catch (err: any) {
+      console.error('[Local upload fallback error]', err);
+      res.status(500).json({ message: 'Local upload failed: ' + (err.message ?? String(err)) });
+    }
   }
 );
 
