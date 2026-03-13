@@ -5,6 +5,7 @@ import NovelEditor from './NovelEditor';
 import { uploadArticleImage } from '../services/storage';
 import { createTopic } from '../services/ctfApi';
 import type { Topic } from '../services/ctfApi';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface ArticleEditorProps {
   /** Populated when editing an existing article */
@@ -70,6 +71,8 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({
   isBlog = false,
   onTopicCreated,
 }) => {
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
   const [title, setTitle] = useState(initialTitle);
   const [novelContent, setNovelContent] = useState<JSONContent | undefined>(() => {
     if (!initialContent) return undefined;
@@ -184,11 +187,17 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({
   const canSubmit = canEdit && !!onSubmit && !!novelContent;
 
   return (
-    <div data-color-mode="dark" className="flex flex-col gap-4">
+    <div data-color-mode={theme} className="flex flex-col gap-4">
       {/* Rejection notice — full width */}
       {articleStatus === 'rejected' && rejectionReason && (
-        <div className="bg-red-950/40 border border-red-500/40 rounded-xl px-4 py-3 text-sm text-red-300">
-          <span className="font-semibold text-red-400">Rejected: </span>{rejectionReason}
+        <div className={`rounded-xl px-4 py-3 text-sm border ${
+          isLight 
+            ? 'bg-red-50 border-red-200 text-red-700' 
+            : 'bg-red-950/40 border-red-500/40 text-red-300'
+        }`}>
+          <span className={`font-semibold ${
+            isLight ? 'text-red-800' : 'text-red-400'
+          }`}>Rejected: </span>{rejectionReason}
         </div>
       )}
 
@@ -203,12 +212,18 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({
             onChange={(e) => setTitle(e.target.value)}
             disabled={!canEdit}
             placeholder="Enter a clear, descriptive title…"
-            className="w-full bg-gray-900/60 border border-gray-700/80 rounded-xl px-5 py-3.5 text-white text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-cyan-500/50 disabled:opacity-60 placeholder:text-gray-600"
+            className={`w-full rounded-xl px-5 py-3.5 text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-cyan-500/50 disabled:opacity-60 border ${
+              isLight 
+                ? 'bg-white border-gray-200 text-gray-900 placeholder:text-gray-500' 
+                : 'bg-gray-900/60 border-gray-700/80 text-white placeholder:text-gray-600'
+            }`}
           />
 
           {/* Content editor */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+            <label className={`text-xs font-semibold uppercase tracking-widest ${
+              isLight ? 'text-gray-600' : 'text-gray-500'
+            }`}>
               Content *
             </label>
             {uploadError && <p className="text-xs text-red-400">{uploadError}</p>}
@@ -226,14 +241,24 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({
 
           {/* Status pill */}
           {articleStatus && articleStatus !== 'draft' && (
-            <div className="flex items-center justify-between px-4 py-2.5 bg-gray-900/80 border border-gray-800 rounded-xl">
-              <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">Status</span>
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                articleStatus === 'published' ? 'bg-cyan-900/40 text-cyan-300 border border-cyan-700/40' :
-                articleStatus === 'approved'  ? 'bg-indigo-900/40 text-indigo-300 border border-indigo-700/40' :
-                articleStatus === 'pending'   ? 'bg-yellow-900/40 text-yellow-300 border border-yellow-700/40' :
-                articleStatus === 'rejected'  ? 'bg-red-900/40 text-red-300 border border-red-700/40' :
-                'bg-gray-800 text-gray-400 border border-gray-700'
+            <div className={`flex items-center justify-between px-4 py-2.5 rounded-xl border ${
+              isLight 
+                ? 'bg-gray-50 border-gray-200' 
+                : 'bg-gray-900/80 border-gray-800'
+            }`}>
+              <span className={`text-xs font-medium uppercase tracking-wide ${
+                isLight ? 'text-gray-600' : 'text-gray-500'
+              }`}>Status</span>
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
+                articleStatus === 'published' 
+                  ? (isLight ? 'bg-cyan-100 text-cyan-700 border-cyan-300' : 'bg-cyan-900/40 text-cyan-300 border-cyan-700/40')
+                  : articleStatus === 'approved'
+                  ? (isLight ? 'bg-indigo-100 text-indigo-700 border-indigo-300' : 'bg-indigo-900/40 text-indigo-300 border-indigo-700/40')
+                  : articleStatus === 'pending'
+                  ? (isLight ? 'bg-yellow-100 text-yellow-700 border-yellow-300' : 'bg-yellow-900/40 text-yellow-300 border-yellow-700/40')
+                  : articleStatus === 'rejected'
+                  ? (isLight ? 'bg-red-100 text-red-700 border-red-300' : 'bg-red-900/40 text-red-300 border-red-700/40')
+                  : (isLight ? 'bg-gray-100 text-gray-700 border-gray-300' : 'bg-gray-800 text-gray-400 border-gray-700')
               }`}>
                 {articleStatus.charAt(0).toUpperCase() + articleStatus.slice(1)}
               </span>
@@ -246,7 +271,9 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({
               <button
                 onClick={() => onSubmit!(buildData())}
                 disabled={isSubmitting || !title.trim() || !topicId}
-                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                  isLight ? 'text-black' : 'text-white'
+                }`}
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {isSubmitting ? 'Submitting…' : 'Submit for Review'}
@@ -256,31 +283,45 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({
               <button
                 onClick={handleSave}
                 disabled={isSaving || !title.trim() || !topicId}
-                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed border ${
+                  isLight 
+                    ? 'bg-gray-100 hover:bg-gray-200 border-gray-200 text-black' 
+                    : 'bg-gray-800 hover:bg-gray-700 border-gray-700 text-white'
+                }`}
               >
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {isSaving ? 'Saving…' : 'Save Draft'}
               </button>
             )}
             {!canEdit && (
-              <p className="text-xs text-gray-500 italic text-center">
-                This article is in <span className="capitalize font-medium text-gray-400">{articleStatus}</span> state and cannot be edited.
+              <p className={`text-xs italic text-center ${
+                isLight ? 'text-gray-600' : 'text-gray-500'
+              }`}>
+                This article is in <span className={`capitalize font-medium ${
+                  isLight ? 'text-gray-700' : 'text-gray-400'
+                }`}>{articleStatus}</span> state and cannot be edited.
               </p>
             )}
           </div>
 
-          <div className="border-t border-gray-800" />
+          <div className={`border-t ${
+            isLight ? 'border-gray-200' : 'border-gray-800'
+          }`} />
 
           {/* Topic / Category selector — shown for all content types */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+              <label className={`text-xs font-semibold uppercase tracking-widest ${
+                isLight ? 'text-gray-600' : 'text-gray-500'
+              }`}>
                 {isBlog ? 'Category' : 'Topic'} *
               </label>
               {canEdit && (
                 <button
                   onClick={() => { setShowNewCategory((v) => !v); setCatError(null); }}
-                  className="flex items-center gap-1 text-xs text-cyan-500 hover:text-cyan-400 transition-colors"
+                  className={`flex items-center gap-1 text-xs transition-colors ${
+                    isLight ? 'text-cyan-600 hover:text-cyan-700' : 'text-cyan-500 hover:text-cyan-400'
+                  }`}
                 >
                   <Plus className="w-3 h-3" />
                   New {isBlog ? 'Category' : 'Topic'}
@@ -290,18 +331,30 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({
 
             {/* Inline new category form */}
             {showNewCategory && canEdit && (
-              <div className="bg-gray-800/60 border border-cyan-500/20 rounded-xl p-3 space-y-2">
+              <div className={`rounded-xl p-3 space-y-2 border ${
+                isLight 
+                  ? 'bg-cyan-50 border-cyan-200' 
+                  : 'bg-gray-800/60 border-cyan-500/20'
+              }`}>
                 <input
                   value={newCatTitle}
                   onChange={(e) => setNewCatTitle(e.target.value)}
                   placeholder={`${isBlog ? 'Category' : 'Topic'} title…`}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+                  className={`w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border ${
+                    isLight 
+                      ? 'bg-white border-gray-200 text-gray-900' 
+                      : 'bg-gray-900 border-gray-700 text-white'
+                  }`}
                 />
                 <input
                   value={newCatDesc}
                   onChange={(e) => setNewCatDesc(e.target.value)}
                   placeholder="Short description (optional)"
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+                  className={`w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border ${
+                    isLight 
+                      ? 'bg-white border-gray-200 text-gray-900' 
+                      : 'bg-gray-900 border-gray-700 text-white'
+                  }`}
                 />
                 {catError && <p className="text-xs text-red-400">{catError}</p>}
                 <div className="flex gap-2">
@@ -315,7 +368,11 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({
                   </button>
                   <button
                     onClick={() => { setShowNewCategory(false); setNewCatTitle(''); setNewCatDesc(''); setCatError(null); }}
-                    className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-lg text-xs transition-colors"
+                    className={`px-3 py-1.5 rounded-lg text-xs transition-colors ${
+                      isLight 
+                        ? 'bg-gray-200 hover:bg-gray-300 text-gray-700' 
+                        : 'bg-gray-700 hover:bg-gray-600 text-white'
+                    }`}
                   >
                     Cancel
                   </button>
@@ -324,7 +381,11 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({
             )}
 
             {topics.length === 0 && !showNewCategory ? (
-              <div className="text-xs text-amber-400 bg-amber-900/20 border border-amber-700/40 rounded-xl px-3 py-2.5 leading-relaxed">
+              <div className={`text-xs rounded-xl px-3 py-2.5 leading-relaxed border ${
+                isLight 
+                  ? 'text-amber-700 bg-amber-50 border-amber-200' 
+                  : 'text-amber-400 bg-amber-900/20 border-amber-700/40'
+              }`}>
                 No {isBlog ? 'categories' : 'topics'} found. Create one above to continue.
               </div>
             ) : (

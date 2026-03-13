@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import ChatAssistant from './components/ChatAssistant';
 import { MOCK_CONTENT } from './constants';
@@ -29,6 +28,7 @@ import {
   Code, HardDrive, Search, Clock, ArrowLeft, Check, Lock,
   Calendar, AlertCircle, Loader2,
 } from 'lucide-react';
+import AdminArticlePreviewPage from './admin-article-preview';
 
 // ─── Roadmap detail page ──────────────────────────────────────────────────────
 
@@ -778,33 +778,47 @@ const AdminDashboardRoute: React.FC = () => {
 
 // ─── Main App ────────────────────────────────────────────────────────────────
 
-const App: React.FC = () => (
-  <Layout>
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/blogs" element={<BlogPage />} />
-      <Route path="/blogs/:slug" element={<BlogPage />} />
-      <Route path="/experiments" element={<ContentListPage type={ContentType.EXPERIMENT} label="experiments" />} />
-      <Route path="/ctf" element={<CTFWriteupsPage />} />
-      <Route path="/roadmaps" element={<RoadmapsPage />} />
-      <Route path="/roadmaps/:id" element={<RoadmapDetailRoute />} />
-      <Route path="/projects" element={<ProjectsPage />} />
-      <Route path="/projects/:id" element={<ProjectDetailPage />} />
-      <Route path="/achievements" element={<AchievementsPage />} />
-      <Route path="/certifications" element={<CertificationsPage />} />
-      <Route path="/companies" element={<CompaniesPage />} />
-      <Route path="/students" element={<StudentsPage />} />
-      <Route path="/interviews" element={<InterviewExperiencesPage />} />
-      <Route path="/career" element={<CareerPage />} />
-      <Route path="/faculty" element={<FacultyPage />} />
-      <Route path="/gallery" element={<DepartmentGallery />} />
-      <Route path="/author-dashboard" element={<AuthorDashboardRoute />} />
-      <Route path="/admin-dashboard" element={<AdminDashboardRoute />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-    <ChatAssistant />
-  </Layout>
-);
+const App: React.FC = () => {
+  const location = useLocation();
+
+  if (location.pathname === '/admin/article-preview') {
+    return (
+      <Layout>
+        <Routes>
+          <Route path="/admin/article-preview" element={<AdminArticlePreviewPage />} />
+        </Routes>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/blogs" element={<BlogPage />} />
+        <Route path="/blogs/:slug" element={<BlogPage />} />
+        <Route path="/experiments" element={<ContentListPage type={ContentType.EXPERIMENT} label="experiments" />} />
+        <Route path="/ctf" element={<CTFWriteupsPage />} />
+        <Route path="/roadmaps" element={<RoadmapsPage />} />
+        <Route path="/roadmaps/:id" element={<RoadmapDetailRoute />} />
+        <Route path="/projects" element={<ProjectsPage />} />
+        <Route path="/projects/:id" element={<ProjectDetailPage />} />
+        <Route path="/achievements" element={<AchievementsPage />} />
+        <Route path="/certifications" element={<CertificationsPage />} />
+        <Route path="/companies" element={<CompaniesPage />} />
+        <Route path="/students" element={<StudentsPage />} />
+        <Route path="/interviews" element={<InterviewExperiencesPage />} />
+        <Route path="/career" element={<CareerPage />} />
+        <Route path="/faculty" element={<FacultyPage />} />
+        <Route path="/gallery" element={<DepartmentGallery />} />
+        <Route path="/author-dashboard" element={<AuthorDashboardRoute />} />
+        <Route path="/admin-dashboard" element={<AdminDashboardRoute />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <ChatAssistant />
+    </Layout>
+  );
+};
 
 export default App;
-  
+

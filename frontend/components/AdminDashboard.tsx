@@ -12,22 +12,60 @@ import {
 } from '../services/ctfApi';
 import NovelRenderer from './NovelRenderer';
 import { useToast } from '../contexts/ToastContext';
+import { useTheme } from '../contexts/ThemeContext';
 import ConfirmModal from './ConfirmModal';
 
 // ─── Shared Helpers ───────────────────────────────────────────────────────────
 
-const ROLE_COLORS: Record<string, string> = {
-  admin:   'text-yellow-400 bg-yellow-900/30 border-yellow-700/40',
-  author:  'text-cyan-400 bg-cyan-900/30 border-cyan-700/40',
-  student: 'text-gray-400 bg-gray-800/60 border-gray-700',
+const getRoleColors = (role: string, isLight: boolean): string => {
+  const colors = {
+    admin: isLight 
+      ? 'text-yellow-700 bg-yellow-100 border-yellow-300'
+      : 'text-yellow-400 bg-yellow-900/30 border-yellow-700/40',
+    author: isLight
+      ? 'text-cyan-700 bg-cyan-100 border-cyan-300'
+      : 'text-cyan-400 bg-cyan-900/30 border-cyan-700/40',
+    student: isLight
+      ? 'text-gray-700 bg-gray-100 border-gray-300'
+      : 'text-gray-400 bg-gray-800/60 border-gray-700',
+  };
+  return colors[role as keyof typeof colors] || colors.student;
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  draft:     'text-gray-400 bg-gray-800/60 border-gray-700',
-  pending:   'text-yellow-400 bg-yellow-900/30 border-yellow-700/40',
-  approved:  'text-indigo-400 bg-indigo-900/30 border-indigo-700/40',
-  published: 'text-cyan-400 bg-cyan-900/30 border-cyan-700/40',
-  rejected:  'text-red-400 bg-red-900/30 border-red-700/40',
+const getStatusColors = (status: string, isLight: boolean): string => {
+  const colors = {
+    draft: isLight
+      ? 'text-gray-700 bg-gray-100 border-gray-300'
+      : 'text-gray-400 bg-gray-800/60 border-gray-700',
+    pending: isLight
+      ? 'text-yellow-700 bg-yellow-100 border-yellow-300'
+      : 'text-yellow-400 bg-yellow-900/30 border-yellow-700/40',
+    approved: isLight
+      ? 'text-indigo-700 bg-indigo-100 border-indigo-300'
+      : 'text-indigo-400 bg-indigo-900/30 border-indigo-700/40',
+    published: isLight
+      ? 'text-cyan-700 bg-cyan-100 border-cyan-300'
+      : 'text-cyan-400 bg-cyan-900/30 border-cyan-700/40',
+    rejected: isLight
+      ? 'text-red-700 bg-red-100 border-red-300'
+      : 'text-red-400 bg-red-900/30 border-red-700/40',
+  };
+  return colors[status as keyof typeof colors] || colors.draft;
+};
+
+const getTypeColors = (type: string, isLight: boolean): string => {
+  const colors = {
+    blog: isLight
+      ? 'text-emerald-700 bg-emerald-100 border-emerald-300'
+      : 'text-emerald-400 bg-emerald-900/30 border-emerald-700/40',
+    ctf: isLight
+      ? 'text-cyan-700 bg-cyan-100 border-cyan-300'
+      : 'text-cyan-400 bg-cyan-900/30 border-cyan-700/40',
+    experiment: isLight
+      ? 'text-purple-700 bg-purple-100 border-purple-300'
+      : 'text-purple-400 bg-purple-900/30 border-purple-700/40',
+  };
+  return colors[type as keyof typeof colors] || colors.ctf;
 };
 
 const Badge: React.FC<{ label: string; color: string }> = ({ label, color }) => (
@@ -40,6 +78,8 @@ const Badge: React.FC<{ label: string; color: string }> = ({ label, color }) => 
 
 const UsersPanel: React.FC = () => {
   const toast = useToast();
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
   const [users, setUsers] = useState<DbUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,16 +114,26 @@ const UsersPanel: React.FC = () => {
           </h2>
           <p className="text-sm text-gray-500 mt-0.5">Manage roles for all registered users</p>
         </div>
-        <button onClick={load} className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-800 border border-gray-800 rounded-xl transition-all" title="Refresh">
+        <button onClick={load} className={`p-2.5 transition-all rounded-xl border ${
+          isLight 
+            ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-gray-200' 
+            : 'text-gray-400 hover:text-white hover:bg-gray-800 border-gray-800'
+        }`} title="Refresh">
           <RefreshCw className="w-4 h-4" />
         </button>
       </div>
 
       {loading ? <LoadingSpinner /> : (
-        <div className="rounded-2xl border border-gray-800 overflow-hidden overflow-x-auto">
+        <div className={`rounded-2xl border overflow-hidden overflow-x-auto ${
+          isLight ? 'border-gray-200' : 'border-gray-800'
+        }`}>
           <div className="min-w-[580px]">
           {/* Table header */}
-          <div className="grid grid-cols-[1fr_180px_160px_40px] gap-4 px-5 py-2.5 bg-gray-900/80 border-b border-gray-800 text-xs font-semibold uppercase tracking-widest text-gray-500">
+          <div className={`grid grid-cols-[1fr_180px_160px_40px] gap-4 px-5 py-2.5 border-b text-xs font-semibold uppercase tracking-widest ${
+            isLight 
+              ? 'bg-gray-50 border-gray-200 text-gray-600' 
+              : 'bg-gray-900/80 border-gray-800 text-gray-500'
+          }`}>
             <span>User</span>
             <span>Current Role</span>
             <span>Change Role</span>
@@ -92,23 +142,33 @@ const UsersPanel: React.FC = () => {
           {users.map((u, i) => (
             <div
               key={u.uid}
-              className={`grid grid-cols-[1fr_180px_160px_40px] gap-4 items-center px-5 py-3.5 ${
-                i % 2 === 0 ? 'bg-gray-900/40' : 'bg-gray-900/20'
-              } hover:bg-gray-800/40 transition-colors`}
+              className={`grid grid-cols-[1fr_180px_160px_40px] gap-4 items-center px-5 py-3.5 transition-colors ${
+                isLight
+                  ? `${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100`
+                  : `${i % 2 === 0 ? 'bg-gray-900/40' : 'bg-gray-900/20'} hover:bg-gray-800/40`
+              }`}
             >
               <div className="min-w-0">
-                <p className="font-medium text-white truncate">{u.displayName || '(no name)'}</p>
-                <p className="text-xs text-gray-500 truncate">{u.email}</p>
+                <p className={`font-medium truncate ${
+                  isLight ? 'text-gray-900' : 'text-white'
+                }`}>{u.displayName || '(no name)'}</p>
+                <p className={`text-xs truncate ${
+                  isLight ? 'text-gray-600' : 'text-gray-500'
+                }`}>{u.email}</p>
               </div>
               <div>
-                <Badge label={u.role} color={ROLE_COLORS[u.role] ?? ROLE_COLORS.student} />
+                <Badge label={u.role} color={getRoleColors(u.role, isLight)} />
               </div>
               <div>
                 <select
                   value={u.role}
                   disabled={updatingId === u.uid}
                   onChange={(e) => handleRoleChange(u.uid, e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 disabled:opacity-50"
+                  className={`w-full rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50 disabled:opacity-50 border ${
+                    isLight 
+                      ? 'bg-white border-gray-200 text-gray-900' 
+                      : 'bg-gray-800 border-gray-700 text-white'
+                  }`}
                 >
                   <option value="student">student</option>
                   <option value="author">author</option>
@@ -131,6 +191,8 @@ const UsersPanel: React.FC = () => {
 
 const TopicsPanel: React.FC = () => {
   const toast = useToast();
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
   // Topic type filter (persisted to localStorage)
   const [activeTopicType, setActiveTopicType] = useState<CMSType>(() => {
     try {
@@ -253,7 +315,11 @@ const TopicsPanel: React.FC = () => {
           <p className="text-sm text-gray-500 mt-0.5">Organise content categories and their display order</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={load} className="p-2.5 text-gray-400 hover:text-white hover:bg-gray-800 border border-gray-800 rounded-xl transition-all" title="Refresh"><RefreshCw className="w-4 h-4" /></button>
+          <button onClick={load} className={`p-2.5 transition-all rounded-xl border ${
+            isLight 
+              ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-gray-200' 
+              : 'text-gray-400 hover:text-white hover:bg-gray-800 border-gray-800'
+          }`} title="Refresh"><RefreshCw className="w-4 h-4" /></button>
           <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 rounded-xl text-sm font-semibold transition-colors shadow-lg shadow-cyan-900/30">
             <Plus className="w-4 h-4" /> New Topic
           </button>
@@ -280,27 +346,43 @@ const TopicsPanel: React.FC = () => {
 
       {/* Create/Edit form */}
       {showForm && (
-        <div className="bg-gray-900 border border-cyan-500/30 rounded-2xl p-5 space-y-4">
-          <h3 className="font-semibold text-white">{editingTopic ? 'Edit Topic' : 'New Topic'}</h3>
+        <div className={`border rounded-2xl p-5 space-y-4 ${
+          isLight ? 'border-cyan-200 bg-cyan-50' : 'bg-gray-900 border-cyan-500/30'
+        }`}>
+          <h3 className={`font-semibold ${
+            isLight ? 'text-gray-900' : 'text-white'
+          }`}>{editingTopic ? 'Edit Topic' : 'New Topic'}</h3>
           <input
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
             placeholder="Topic title (e.g. XSS, SQL Injection)"
-            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+            className={`w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50 border ${
+              isLight 
+                ? 'bg-white border-gray-200 text-gray-900' 
+                : 'bg-gray-800 border-gray-700 text-white'
+            }`}
           />
           <textarea
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             placeholder="Short description (optional)"
             rows={2}
-            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+            className={`w-full rounded-xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500/50 border ${
+              isLight 
+                ? 'bg-white border-gray-200 text-gray-900' 
+                : 'bg-gray-800 border-gray-700 text-white'
+            }`}
           />
           <div>
             <label className="block text-xs text-gray-400 mb-1.5 font-medium">Section type</label>
             <select
               value={form.type}
               onChange={(e) => setForm({ ...form, type: e.target.value as 'ctf' | 'blog' | 'experiment' })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+              className={`w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50 border ${
+                isLight 
+                  ? 'bg-white border-gray-200 text-gray-900' 
+                  : 'bg-gray-800 border-gray-700 text-white'
+              }`}
               disabled={!!editingTopic}
             >
               <option value="ctf">CTF Writeup</option>
@@ -320,7 +402,11 @@ const TopicsPanel: React.FC = () => {
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
               {saving ? 'Saving…' : 'Save'}
             </button>
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl text-sm transition-colors">Cancel</button>
+            <button onClick={() => setShowForm(false)} className={`px-4 py-2 rounded-xl text-sm transition-colors border ${
+              isLight 
+                ? 'bg-white hover:bg-gray-50 border-gray-200 text-gray-700' 
+                : 'bg-gray-800 hover:bg-gray-700 border-gray-700 text-white'
+            }`}>Cancel</button>
           </div>
         </div>
       )}
@@ -339,10 +425,16 @@ const TopicsPanel: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="rounded-2xl border border-gray-800 overflow-hidden overflow-x-auto">
+        <div className={`rounded-2xl border overflow-hidden overflow-x-auto ${
+          isLight ? 'border-gray-200' : 'border-gray-800'
+        }`}>
           <div className="min-w-[640px]">
           {/* Table header */}
-          <div className="grid grid-cols-[44px_1fr_120px_2fr_100px] gap-4 px-5 py-2.5 bg-gray-900/80 border-b border-gray-800 text-xs font-semibold uppercase tracking-widest text-gray-500">
+          <div className={`grid grid-cols-[44px_1fr_120px_2fr_100px] gap-4 px-5 py-2.5 border-b text-xs font-semibold uppercase tracking-widest ${
+            isLight 
+              ? 'bg-gray-50 border-gray-200 text-gray-600' 
+              : 'bg-gray-900/80 border-gray-800 text-gray-500'
+          }`}>
             <span>Order</span>
             <span>Title</span>
             <span>Type</span>
@@ -352,24 +444,42 @@ const TopicsPanel: React.FC = () => {
           {filteredTopics.map((t, idx) => (
             <div
               key={t._id}
-              className={`grid grid-cols-[44px_1fr_120px_2fr_100px] gap-4 items-center px-5 py-3.5 ${
-                idx % 2 === 0 ? 'bg-gray-900/40' : 'bg-gray-900/20'
-              } hover:bg-gray-800/40 transition-colors`}
+              className={`grid grid-cols-[44px_1fr_120px_2fr_100px] gap-4 items-center px-5 py-3.5 transition-colors ${
+                isLight
+                  ? 'bg-white hover:bg-gray-50'
+                  : `${idx % 2 === 0 ? 'bg-gray-900/40' : 'bg-gray-900/20'} hover:bg-gray-800/40`
+              }`}
             >
               <div className="flex flex-col gap-0.5">
-                <button disabled={idx === 0} onClick={() => moveOrder(t, 'up')} className="text-gray-600 hover:text-white disabled:opacity-20 transition-colors" title="Move up"><ChevronUp className="w-3.5 h-3.5" /></button>
-                <button disabled={idx === filteredTopics.length - 1} onClick={() => moveOrder(t, 'down')} className="text-gray-600 hover:text-white disabled:opacity-20 transition-colors" title="Move down"><ChevronDown className="w-3.5 h-3.5" /></button>
+                <button disabled={idx === 0} onClick={() => moveOrder(t, 'up')} className={`transition-colors disabled:opacity-20 ${
+                  isLight ? 'text-gray-500 hover:text-gray-900' : 'text-gray-600 hover:text-white'
+                }`} title="Move up"><ChevronUp className="w-3.5 h-3.5" /></button>
+                <button disabled={idx === filteredTopics.length - 1} onClick={() => moveOrder(t, 'down')} className={`transition-colors disabled:opacity-20 ${
+                  isLight ? 'text-gray-500 hover:text-gray-900' : 'text-gray-600 hover:text-white'
+                }`} title="Move down"><ChevronDown className="w-3.5 h-3.5" /></button>
               </div>
-              <p className="font-medium text-white">{t.title}</p>
+              <p className={`font-medium ${
+                isLight ? 'text-gray-900' : 'text-white'
+              }`}>{t.title}</p>
               <div className="flex items-center">
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${TYPE_COLORS[t.type ?? 'ctf']}`}>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getTypeColors(t.type ?? 'ctf', isLight)}`}>
                   {t.type ?? 'ctf'}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 truncate min-w-0">{t.description || '—'}</p>
+              <p className={`text-xs truncate min-w-0 ${
+                isLight ? 'text-gray-600' : 'text-gray-500'
+              }`}>{t.description || '—'}</p>
               <div className="flex items-center gap-1 justify-end">
-                <button onClick={() => openEdit(t)} className="p-2 text-gray-400 hover:text-cyan-400 hover:bg-gray-800 rounded-lg transition-colors" title="Edit"><Edit2 className="w-3.5 h-3.5" /></button>
-                <button onClick={() => handleDelete(t._id, t.title)} disabled={deletingId === t._id} className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50" title="Delete">
+                <button onClick={() => openEdit(t)} className={`p-2 rounded-lg transition-colors ${
+                  isLight 
+                    ? 'text-gray-500 hover:text-cyan-600 hover:bg-gray-100' 
+                    : 'text-gray-400 hover:text-cyan-400 hover:bg-gray-800'
+                }`} title="Edit"><Edit2 className="w-3.5 h-3.5" /></button>
+                <button onClick={() => handleDelete(t._id, t.title)} disabled={deletingId === t._id} className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${
+                  isLight
+                    ? 'text-gray-500 hover:text-red-600 hover:bg-red-50'
+                    : 'text-gray-400 hover:text-red-400 hover:bg-red-900/20'
+                }`} title="Delete">
                   {deletingId === t._id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                 </button>
               </div>
@@ -389,7 +499,20 @@ const ArticlePreviewModal: React.FC<{ article: Article; onClose: () => void }> =
     <div className="bg-gray-950 border border-gray-700 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
         <h2 className="font-bold text-white truncate">{article.title}</h2>
-        <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"><X className="w-4 h-4" /></button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              const previewUrl = new URL('/admin/article-preview', window.location.origin);
+              localStorage.setItem('admin-article-preview', JSON.stringify(article));
+              window.open(previewUrl.toString(), '_blank', 'noopener,noreferrer');
+            }}
+            className="p-1.5 text-cyan-400 hover:text-white hover:bg-cyan-800 rounded-lg transition-colors"
+            title="Open in new tab"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 3h7m0 0v7m0-7L10 14m-7 7h7a2 2 0 002-2v-7" /></svg>
+          </button>
+          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"><X className="w-4 h-4" /></button>
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto p-6" data-color-mode="dark">
         <NovelRenderer
@@ -441,6 +564,8 @@ const TYPE_COLORS: Record<string, string> = {
 
 const ContentPanel: React.FC = () => {
   const toast = useToast();
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
   // CMS type state (persisted to localStorage)
   const [activeCMS, setActiveCMS] = useState<CMSType>(() => {
     try {
@@ -661,7 +786,7 @@ const ContentPanel: React.FC = () => {
           onChange={(e) => setStatusFilter(e.target.value)}
           className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
         >
-          <option value="">All statuses</option>
+          <option value="">All status</option>
           <option value="pending">Pending</option>
           <option value="published">Published</option>
           <option value="rejected">Rejected</option>
@@ -739,11 +864,11 @@ const ContentPanel: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-1.5 flex-wrap">
                       <h3 className="font-semibold text-white">{a.title}</h3>
-                      <Badge label={a.status} color={STATUS_COLORS[a.status] ?? STATUS_COLORS.draft} />
+                      <Badge label={a.status} color={getStatusColors(a.status, isLight)} />
                       {typeof a.topicId === 'object' && (a.topicId as any).type && (
                         <Badge
                           label={(a.topicId as any).type}
-                          color={TYPE_COLORS[(a.topicId as any).type] ?? TYPE_COLORS.ctf}
+                          color={getTypeColors((a.topicId as any).type, isLight)}
                         />
                       )}
                     </div>
@@ -912,6 +1037,8 @@ const TABS: { id: AdminTab; label: string; icon: React.FC<any> }[] = [
 ];
 
 const AdminDashboard: React.FC = () => {
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
   const [tab, setTab] = useState<AdminTab>('content');
 
   return (
@@ -922,20 +1049,28 @@ const AdminDashboard: React.FC = () => {
           <ShieldCheck className="w-5 h-5 text-yellow-400" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage users, topics, and content submissions</p>
+          <h1 className={`text-2xl font-bold ${
+            isLight ? 'text-gray-900' : 'text-white'
+          }`}>Admin Dashboard</h1>
+          <p className={`text-sm mt-0.5 ${
+            isLight ? 'text-gray-600' : 'text-gray-500'
+          }`}>Manage users, topics, and content submissions</p>
         </div>
       </div>
 
       {/* Underline tab bar */}
-      <div className="border-b border-gray-800">
+      <div className={`border-b ${
+        isLight ? 'border-gray-200' : 'border-gray-800'
+      }`}>
         <div className="flex gap-1">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => setTab(id)}
               className={`relative flex items-center gap-2 px-5 py-3 text-sm font-semibold transition-all ${
-                tab === id ? 'text-cyan-400' : 'text-gray-500 hover:text-gray-300'
+                tab === id 
+                  ? (isLight ? 'text-cyan-600' : 'text-cyan-400') 
+                  : (isLight ? 'text-gray-600 hover:text-gray-800' : 'text-gray-500 hover:text-gray-300')
               }`}
             >
               <Icon className="w-4 h-4" />
