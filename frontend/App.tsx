@@ -6,6 +6,7 @@ import { MOCK_CONTENT, MOCK_INTERVIEWS, ROADMAPS } from './constants';
 import { ContentType, RoadmapData } from './types';
 import ProjectsPage from './components/ProjectsPage';
 import AchievementsPage from './components/AchievementsPage';
+import PublicationsPage from './components/PublicationsPage';
 import CertificationsPage from "./components/CertificationsPage";
 import CompaniesPage from './components/CompaniesPage';
 import StudentsPage from './components/StudentsPage';
@@ -23,7 +24,6 @@ import {
   ExternalLink, ArrowRight, User, ChevronRight,
   Code, HardDrive, Search, Clock, ArrowLeft, Check, Lock,
 } from 'lucide-react';
-import { ThemeProvider } from './contexts/ThemeContext';
 
 // ─── Roadmap detail page ──────────────────────────────────────────────────────
 
@@ -451,6 +451,9 @@ const App: React.FC = () => {
 
       case 'companies':
         return <CompaniesPage />;
+
+      case 'publications':
+        return <PublicationsPage />;
 
       case 'certifications':
         return <CertificationsPage />;

@@ -145,3 +145,21 @@ export interface CompanyInfo {
   interviewExperience?: string;
   notesTips: string;
 }
+
+export type PublicationKind = 'Paper' | 'Patent' | 'Book Chapter' | 'Poster';
+export type VenueType = 'Conference' | 'Journal' | 'Workshop' | 'Symposium' | 'Other';
+
+export interface Publication {
+  id: string;
+  title: string;
+  kind: PublicationKind;
+  publicationDate: string;
+  venue: string;
+  publisher: string;
+  venueType: VenueType;
+  isInternational: boolean;
+  abstract: string;
+  keywords?: string[];
+  authors: string[];
+  link?: string;
+}

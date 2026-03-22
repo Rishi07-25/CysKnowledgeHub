@@ -45,6 +45,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) =>
       subItems: [
         { id: 'projects', label: 'Projects', icon: Github },
         { id: 'achievements', label: 'Achievements', icon: Award },
+        { id: 'publications', label: 'Publications', icon: BookOpen },
         { id: 'experiments', label: 'Experiments', icon: Cpu },
         { id: 'certifications', label: 'Certifications', icon: FileBadge },
       ]
@@ -95,17 +96,19 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) =>
                   <button className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-xl transition-colors text-gray-500 dark:text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-gray-100 dark:hover:bg-gray-800/50`}>
                     {item.label} <ChevronDown className="w-3.5 h-3.5 opacity-70 group-hover:rotate-180 transition-transform" />
                   </button>
-                  <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden translate-y-2 group-hover:translate-y-0">
-                    {item.subItems.map(sub => (
-                      <button
-                        key={sub.id}
-                        onClick={() => setActiveTab(sub.id)}
-                        className={`w-full flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-cyan-600 dark:hover:text-cyan-400 ${activeTab === sub.id ? 'text-cyan-600 dark:text-cyan-500 bg-gray-100 dark:bg-gray-800/50' : 'text-gray-500 dark:text-gray-400'}`}
-                      >
-                        <sub.icon className="w-4 h-4" />
-                        {sub.label}
-                      </button>
-                    ))}
+                  <div className="absolute top-full left-0 pt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl overflow-hidden translate-y-2 group-hover:translate-y-0 transition-all">
+                      {item.subItems.map(sub => (
+                        <button
+                          key={sub.id}
+                          onClick={() => setActiveTab(sub.id)}
+                          className={`w-full flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-cyan-600 dark:hover:text-cyan-400 ${activeTab === sub.id ? 'text-cyan-600 dark:text-cyan-500 bg-gray-100 dark:bg-gray-800/50' : 'text-gray-500 dark:text-gray-400'}`}
+                        >
+                          <sub.icon className="w-4 h-4" />
+                          {sub.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -265,9 +268,9 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) =>
           <div>
             <h4 className="font-bold mb-4">Quick Links</h4>
             <ul className="space-y-2 text-gray-400">
-              <li><button onClick={() => navigate('/blogs')} className="hover:text-cyan-400">Security Blogs</button></li>
-              <li><button onClick={() => navigate('/ctf')} className="hover:text-cyan-400">CTF</button></li>
-              <li><button onClick={() => navigate('/roadmaps')} className="hover:text-cyan-400">Roadmaps</button></li>
+              <li><button onClick={() => setActiveTab('blogs')} className="hover:text-cyan-400">Security Blogs</button></li>
+              <li><button onClick={() => setActiveTab('ctf')} className="hover:text-cyan-400">CTF</button></li>
+              <li><button onClick={() => setActiveTab('roadmaps')} className="hover:text-cyan-400">Roadmaps</button></li>
             </ul>
           </div>
           <div>
