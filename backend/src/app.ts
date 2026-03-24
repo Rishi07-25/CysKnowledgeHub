@@ -1,3 +1,4 @@
+import videoRoutes from './routes/videos';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -53,6 +54,7 @@ app.use('/api/companies',     companiesRoutes);
 app.use('/api/roadmaps',      roadmapsRoutes);
 app.use('/api/blog',          blogRoutes);
 app.use('/api/writeups',      writeupsRoutes);
+app.use('/api/videos', videoRoutes);
 
 // ─── API 404 Fallback (must be before SPA catch-all) ─────────────────────────
 app.use('/api/*', (_req, res) => {

@@ -401,3 +401,48 @@ export const getRoadmaps = () =>
 export const getRoadmap = (id: string) =>
   fetch(`${BASE}/api/roadmaps/${id}`).then((r) => json<ApiRoadmap>(r));
 
+// ─── VIDEO HUB API ──────────────────────────────────────────────────────────
+
+export interface Video {
+  _id: string;
+  video_id: string;
+  category: string;
+  tag: string;
+  title: string;
+  description: string;
+  author: string;
+  author_id: string;
+  date: string;
+  base_upvotes: number;
+  status: string;
+  series?: string;      // The '?' means it is optional
+  seriesOrder?: number;
+}
+
+export const adminGetVideos = async (filters?: { status?: string; category?: string }): Promise<Video[]> => {
+  const response = await fetch('http://localhost:5000/api/videos');
+  if (!response.ok) throw new Error('Failed to fetch videos');
+  
+  let data: Video[] = await response.json();
+  
+  // Filter the data based on dashboard dropdowns
+  if (filters?.status) {
+    data = data.filter(v => v.status === filters.status);
+  }
+  if (filters?.category) {
+    data = data.filter(v => v.category === filters.category);
+  }
+  
+  return data;
+};
+
+export const adminSetVideoStatus = async (id: string, status: string): Promise<Video> => {
+  const response = await fetch(`http://localhost:5000/api/videos/${id}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status })
+  });
+  
+  if (!response.ok) throw new Error('Failed to update video status');
+  return response.json();
+};

@@ -3,13 +3,14 @@ import {
   Users, Hash, FileText, ShieldCheck, Loader2, AlertCircle,
   Plus, Trash2, Edit2, Check, X, ChevronUp, ChevronDown,
   RefreshCw, Eye, BookOpen, UserCog, Search, Layers,
-  Flag, Trophy, Tag as TagIcon
+  Flag, Trophy, Tag as TagIcon, MonitorPlay, ListVideo
 } from 'lucide-react';
 import {
   adminGetUsers, adminSetUserRole,
   adminGetTopics, adminCreateTopic, adminUpdateTopic, adminDeleteTopic,
   adminGetArticles, adminSetArticleStatus, adminSetArticleOrder, adminUpdateArticleTopic,
-  DbUser, Topic, Article,
+  adminGetVideos, adminSetVideoStatus,
+  DbUser, Topic, Article, Video,
 } from '../services/ctfApi';
 import {
   adminGetWriteups, adminSetWriteupStatus, adminDeleteWriteup, Writeup
@@ -75,8 +76,20 @@ const getTypeColors = (type: string, isLight: boolean): string => {
   return colors[type as keyof typeof colors] || colors.ctf;
 };
 
+const getVideoCategoryColors = (category: string, isLight: boolean): string => {
+  const colors = {
+    tutorial: isLight
+      ? 'text-cyan-700 bg-cyan-100 border-cyan-300'
+      : 'text-cyan-400 bg-cyan-900/30 border-cyan-700/40',
+    reel: isLight
+      ? 'text-amber-700 bg-amber-100 border-amber-300'
+      : 'text-amber-400 bg-amber-900/30 border-amber-700/40',
+  };
+  return colors[category.toLowerCase() as keyof typeof colors] || (isLight ? 'text-gray-700 bg-gray-100 border-gray-300' : 'text-gray-400 bg-gray-800/60 border-gray-700');
+};
+
 const Badge: React.FC<{ label: string; color: string }> = ({ label, color }) => (
-  <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${color}`}>
+  <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border inline-block w-max ${color}`}>
     {label}
   </span>
 );
@@ -656,9 +669,146 @@ const ContentPanel: React.FC = () => {
   );
 };
 
+// ─── Panel: Video Moderation ───────────────────────────────────────────────────
+
+const VideosPanel: React.FC = () => {
+  const toast = useToast();
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
+
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('pending');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [actionId, setActionId] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const v = await adminGetVideos({
+        status: statusFilter || undefined,
+        category: categoryFilter || undefined,
+      });
+      setVideos(v);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [statusFilter, categoryFilter, toast]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const visibleVideos = videos.filter((v) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      v.title.toLowerCase().includes(q) ||
+      v.author.toLowerCase().includes(q) ||
+      v.tag.toLowerCase().includes(q)
+    );
+  });
+
+  const handleStatus = async (id: string, status: 'published' | 'pending' | 'rejected') => {
+    setActionId(id);
+    try {
+      await adminSetVideoStatus(id, status);
+      toast.success(`Video ${status}.`);
+      await load();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold flex items-center gap-2">
+          <MonitorPlay className="w-5 h-5 text-cyan-500" /> Video Moderation
+          {!loading && <span className="text-sm font-normal text-gray-500">— {visibleVideos.length} items</span>}
+        </h2>
+        <button onClick={load} className="p-2.5 transition-all rounded-xl border border-gray-800 text-gray-400 hover:text-white hover:bg-gray-800" title="Refresh">
+          <RefreshCw className="w-4 h-4" />
+        </button>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search title, author, tag..." className="w-full bg-gray-800 border border-gray-700 rounded-xl pl-9 pr-3 py-2 text-sm text-white focus:outline-none" />
+        </div>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white">
+          <option value="">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="published">Published</option>
+          <option value="rejected">Rejected</option>
+        </select>
+        <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white">
+          <option value="">All Categories</option>
+          <option value="Tutorial">Tutorial</option>
+          <option value="Reel">Reel / Short</option>
+        </select>
+      </div>
+
+      {loading ? (
+        <LoadingSpinner />
+      ) : visibleVideos.length === 0 ? (
+        <div className="text-center py-16 opacity-40"><p>No videos found.</p></div>
+      ) : (
+        <div className="space-y-3">
+          {visibleVideos.map((v) => (
+            <div key={v._id} className="p-4 bg-gray-950 border border-gray-800 hover:border-gray-700 rounded-2xl flex items-center justify-between group transition-all">
+              <div className="min-w-0 pr-4">
+                <div className="flex items-center gap-3 mb-1">
+                  <h3 className="font-bold text-white truncate">{v.title}</h3>
+                  <Badge label={v.status} color={getStatusColors(v.status, false)} />
+                  <Badge label={v.category} color={getVideoCategoryColors(v.category, false)} />
+                </div>
+                <div className="flex items-center gap-4 text-xs text-gray-500">
+                  <span className="flex items-center gap-1"><UserCog className="w-3 h-3" /> {v.author}</span>
+                  <span className="flex items-center gap-1"><TagIcon className="w-3 h-3" /> {v.tag}</span>
+                  <span>{new Date(v.date || Date.now()).toLocaleDateString()}</span>
+                </div>
+                {v.series && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="flex items-center gap-1 text-[10px] font-bold text-purple-400 uppercase tracking-widest bg-purple-900/20 px-2 py-0.5 rounded border border-purple-500/30">
+                      <ListVideo className="w-3 h-3" />
+                      Series: {v.series}
+                    </span>
+                    <span className="text-[10px] font-bold text-gray-400 bg-gray-800 px-2 py-0.5 rounded border border-gray-700">
+                      Part {v.seriesOrder}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                {v.status === 'pending' && (
+                  <>
+                    <button onClick={() => handleStatus(v._id, 'published')} className="p-2 hover:bg-cyan-900/40 rounded-lg text-cyan-400" title="Approve"><Check className="w-4 h-4" /></button>
+                    <button onClick={() => handleStatus(v._id, 'rejected')} className="p-2 hover:bg-red-900/20 rounded-lg text-red-400" title="Reject"><X className="w-4 h-4" /></button>
+                  </>
+                )}
+                {v.status === 'published' && (
+                  <button onClick={() => handleStatus(v._id, 'pending')} className="p-2 hover:bg-yellow-900/20 rounded-lg text-yellow-500" title="Set Pending"><X className="w-4 h-4" /></button>
+                )}
+                {v.status === 'rejected' && (
+                  <button onClick={() => handleStatus(v._id, 'pending')} className="p-2 hover:bg-gray-800 rounded-lg text-gray-400" title="Set Pending"><RefreshCw className="w-4 h-4" /></button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── Main AdminDashboard ──────────────────────────────────────────────────────
 
-type AdminTab = 'users' | 'topics' | 'content';
+type AdminTab = 'users' | 'topics' | 'content' | 'videos';
 
 const AdminDashboard: React.FC = () => {
   const { theme } = useTheme();
@@ -674,6 +824,7 @@ const AdminDashboard: React.FC = () => {
       <div className="border-b border-gray-800 flex gap-1">
         {[
           { id: 'content', label: 'Content', icon: Layers },
+          { id: 'videos', label: 'Videos', icon: MonitorPlay },
           { id: 'topics', label: 'Topics', icon: Hash },
           { id: 'users', label: 'Users', icon: Users },
         ].map(t => (
@@ -687,6 +838,7 @@ const AdminDashboard: React.FC = () => {
         {tab === 'users' && <UsersPanel />}
         {tab === 'topics' && <TopicsPanel />}
         {tab === 'content' && <ContentPanel />}
+        {tab === 'videos' && <VideosPanel />}
       </div>
     </div>
   );

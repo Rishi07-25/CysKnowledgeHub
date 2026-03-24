@@ -1,9 +1,9 @@
-
 import React, { useRef, useEffect, useState } from 'react';
-import { Shield, BookOpen, Map, Award, Terminal, Briefcase, Menu, X, Github, UserCircle, LogOut, Cpu, Building2, ChevronDown, FileBadge, MessageSquare, Users, PenLine, ShieldCheck, Sun, Moon } from 'lucide-react';
+import { Shield, BookOpen, Map, Award, Terminal, Briefcase, Menu, X, Github, UserCircle, LogOut, Cpu, Building2, ChevronDown, FileBadge, MessageSquare, Users, PenLine, ShieldCheck, Sun, Moon, MonitorPlay } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import AuthModal from './AuthModal';
+
 interface LayoutProps {
   children: React.ReactNode;
   activeTab: string;
@@ -18,7 +18,6 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) =>
   const { user, signOut, role } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
-  // Close user-menu on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
@@ -29,7 +28,6 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) =>
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Keep a concise top-level nav and expose category subsections to avoid duplicate flat items
   const navItems = [
     { id: 'home', label: 'Home', icon: Shield },
     {
@@ -38,6 +36,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) =>
         { id: 'blogs', label: 'Blogs', icon: BookOpen, path: '/blogs' },
         { id: 'ctf', label: 'CTF', icon: Terminal, path: '/ctf' },
         { id: 'roadmaps', label: 'Roadmaps', icon: Map, path: '/roadmaps' },
+        { id: 'hub', label: 'Video Hub', icon: MonitorPlay, path: '/hub' },
       ]
     },
     {
@@ -53,9 +52,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) =>
     {
       id: 'directory', label: 'Directory', icon: Users,
       subItems: [
-        // The Constellation (Students list)
         { id: 'students', label: 'The Constellation', icon: Users },
-        // Placeholder entries for future pages (faculty)
         { id: 'faculty', label: 'Faculty', icon: UserCircle },
         { id: 'research-labs', label: 'Research Labs', icon: Map },
       ]
@@ -78,9 +75,9 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) =>
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100">
+    <div className="min-h-screen flex flex-col bg-gray-950 text-gray-100">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+      <header className="sticky top-0 z-50 bg-gray-900/80 backdrop-blur-md border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('home')}>
             <Shield className="w-8 h-8 text-cyan-500" />
@@ -88,21 +85,20 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) =>
           </div>
 
           {/* Desktop Nav */}
-
           <nav className="hidden lg:flex items-center gap-6">
             {navItems.map((item) => (
               item.subItems ? (
                 <div key={item.id} className="relative group">
-                  <button className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-xl transition-colors text-gray-500 dark:text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-gray-100 dark:hover:bg-gray-800/50`}>
+                  <button className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-xl transition-colors text-gray-400 hover:text-cyan-400 hover:bg-gray-800/50`}>
                     {item.label} <ChevronDown className="w-3.5 h-3.5 opacity-70 group-hover:rotate-180 transition-transform" />
                   </button>
                   <div className="absolute top-full left-0 pt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl overflow-hidden translate-y-2 group-hover:translate-y-0 transition-all">
+                    <div className="bg-gray-900 border border-gray-800 rounded-xl shadow-xl overflow-hidden translate-y-2 group-hover:translate-y-0 transition-all">
                       {item.subItems.map(sub => (
                         <button
                           key={sub.id}
                           onClick={() => setActiveTab(sub.id)}
-                          className={`w-full flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-cyan-600 dark:hover:text-cyan-400 ${activeTab === sub.id ? 'text-cyan-600 dark:text-cyan-500 bg-gray-100 dark:bg-gray-800/50' : 'text-gray-500 dark:text-gray-400'}`}
+                          className={`w-full flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-left transition-colors hover:bg-gray-800 hover:text-cyan-400 ${activeTab === sub.id ? 'text-cyan-500 bg-gray-800/50' : 'text-gray-400'}`}
                         >
                           <sub.icon className="w-4 h-4" />
                           {sub.label}
@@ -123,11 +119,11 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) =>
             ))}
           </nav>
 
-           <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors mr-2"
+              className="p-2 rounded-xl bg-gray-800 text-gray-400 hover:text-cyan-400 hover:bg-gray-700 transition-colors mr-2"
               title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             >
               {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -266,15 +262,16 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab }) =>
             </p>
           </div>
           <div>
-            <h4 className="font-bold mb-4">Quick Links</h4>
+            <h4 className="font-bold mb-4 text-gray-100">Quick Links</h4>
             <ul className="space-y-2 text-gray-400">
               <li><button onClick={() => setActiveTab('blogs')} className="hover:text-cyan-400">Security Blogs</button></li>
               <li><button onClick={() => setActiveTab('ctf')} className="hover:text-cyan-400">CTF</button></li>
               <li><button onClick={() => setActiveTab('roadmaps')} className="hover:text-cyan-400">Roadmaps</button></li>
+              <li><button onClick={() => setActiveTab('hub')} className="hover:text-cyan-400">Video Hub</button></li>
             </ul>
           </div>
           <div>
-            <h4 className="font-bold mb-4">Contribute</h4>
+            <h4 className="font-bold mb-4 text-gray-100">Contribute</h4>
             <ul className="space-y-2 text-gray-400">
               <li><button className="hover:text-cyan-400">Submit Project</button></li>
               <li><button className="hover:text-cyan-400">Share Interview Exp</button></li>

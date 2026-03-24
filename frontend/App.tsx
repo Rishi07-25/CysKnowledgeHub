@@ -1,5 +1,5 @@
-
 import React, { useState } from 'react';
+import VideoHub from './components/VideoHub';
 import Layout from './components/Layout';
 import ChatAssistant from './components/ChatAssistant';
 import { MOCK_CONTENT, MOCK_INTERVIEWS, ROADMAPS } from './constants';
@@ -274,7 +274,13 @@ const RoadmapDetailPage: React.FC<RoadmapDetailPageProps> = ({ roadmap, onBack }
 // ─── Main App ────────────────────────────────────────────────────────────────
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTab] = useState(() => {
+    // Look at the URL before the app even finishes loading
+    const params = new URLSearchParams(window.location.search);
+    // If there is a video ID in the URL, jump straight to the Video Hub!
+    if (params.has('v')) return 'hub';
+    return 'home'; // Otherwise, load the Home page as normal
+  });
   const [activeRoadmap, setActiveRoadmap] = useState<string | null>(null);
   const { role, loading: authLoading } = useAuth();
 
@@ -291,11 +297,11 @@ const App: React.FC = () => {
         return (
           <div className="space-y-16">
             {/* Hero */}
-            <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-cyan-100 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 border border-cyan-200 dark:border-cyan-500/20 p-8 md:p-16 text-center">
+            <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-cyan-900/20 to-blue-900/20 border border-cyan-500/20 p-8 md:p-16 text-center">
 
               <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none"
                 style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #06b6d4 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
-              <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight">
+              <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight text-gray-100">
                 Master the Art of <span className="text-cyan-500 underline decoration-cyan-500/30">Cyber Defense</span>
               </h1>
               <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-10">
@@ -319,20 +325,19 @@ const App: React.FC = () => {
                 { label: 'Projects', count: '30+', icon: Code },
                 { label: 'Placements', count: '85+', icon: Briefcase },
               ].map((stat, i) => (
-                <div key={i} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 rounded-2xl text-center group hover:border-cyan-500/50 transition-colors shadow-sm dark:shadow-none">
-                  <stat.icon className="w-6 h-6 text-cyan-600 dark:text-cyan-500 mx-auto mb-3" />
-                  <div className="text-2xl font-bold mb-1 text-gray-900 dark:text-white">{stat.count}</div>
-                  <div className="text-sm text-gray-500 dark:text-gray-500 uppercase tracking-widest">{stat.label}</div>
+                <div key={i} className="bg-gray-900 border border-gray-800 p-6 rounded-2xl text-center group hover:border-cyan-500/50 transition-colors shadow-sm">
+                  <stat.icon className="w-6 h-6 text-cyan-600 mx-auto mb-3" />
+                  <div className="text-2xl font-bold mb-1 text-gray-100">{stat.count}</div>
+                  <div className="text-sm text-gray-500 uppercase tracking-widest">{stat.label}</div>
                 </div>
               ))}
-
             </div>
 
-            {/* Featured */}
+            {/* Featured Knowledge */}
             <section>
               <div className="flex justify-between items-end mb-8">
                 <div>
-                  <h2 className="text-3xl font-bold mb-2">Featured Knowledge</h2>
+                  <h2 className="text-3xl font-bold mb-2 text-gray-100">Featured Knowledge</h2>
                   <p className="text-gray-400">Hand-picked resources to level up your skills.</p>
                 </div>
                 <button onClick={() => setActiveTab('blogs')} className="text-cyan-500 font-medium hover:underline flex items-center gap-1">
@@ -341,7 +346,7 @@ const App: React.FC = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {MOCK_CONTENT.slice(0, 3).map((item) => (
-                  <div key={item.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden hover:transform hover:-translate-y-1 transition-all shadow-sm hover:shadow-md dark:shadow-none">
+                  <div key={item.id} className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden hover:transform hover:-translate-y-1 transition-all shadow-sm">
 
                     <img src={item.imageUrl} alt={item.title} className="w-full h-48 object-cover" />
                     <div className="p-6">
@@ -351,7 +356,7 @@ const App: React.FC = () => {
                         </span>
                         <span className="text-xs text-gray-500">{item.date}</span>
                       </div>
-                      <h3 className="text-xl font-bold mb-2 line-clamp-1">{item.title}</h3>
+                      <h3 className="text-xl font-bold mb-2 line-clamp-1 text-gray-100">{item.title}</h3>
                       <p className="text-gray-400 text-sm mb-4 line-clamp-2">{item.description}</p>
                       <button className="text-sm font-semibold text-cyan-500 hover:text-cyan-400">Read More</button>
                     </div>
@@ -361,6 +366,8 @@ const App: React.FC = () => {
             </section>
           </div>
         );
+      case 'hub':
+        return <VideoHub />;
 
       case 'ctf':
         return <CTFPage />;
